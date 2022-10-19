@@ -212,14 +212,14 @@ function p_sci.dissector(buf, pktinfo, root)
     local position = 0
 
     -- SCI-P packet
-    if (pktlen - position) > 45 then
+    if (pktlen - position) >= 45 then
         if ((buf:range(position+2, 1):le_uint() == 0x40) or (buf:range(position+2, 1):le_uint() == 0x30)) then 
             sci = root:add(p_sci, buf(), "SCI")
             pktinfo.cols.protocol:set("SCI")
            end
     end
 
-    while (pktlen - position) > 45 do
+    while (pktlen - position) >= 45 do
         local packet_type = 0;
 
         if (buf:range(position+2, 1):le_uint() == 0x40) then packet_type = "SCI-P"

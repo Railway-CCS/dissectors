@@ -122,7 +122,7 @@ local sci_p_msg_types = {
 local sci_p_message_type    = ProtoField.uint16("sci.message_type", "Message Type", base.HEX, sci_p_msg_types)
 
 local sci_src_id            = ProtoField.string("sci.src_id", "Sender Identifier")
-local sci_dest_id           = ProtoField.string("sci.dest_id", "Receiver Indentifier")
+local sci_dest_id           = ProtoField.string("sci.dest_id", "Receiver Identifier")
 local sci_btp_version       = ProtoField.uint8("sci.btp_version", "BTP Version")
 local sci_btp_version_2     = ProtoField.uint8("sci.btp_version", "BTP Version in Subsystem")
 local sci_btp_version_cmp   = ProtoField.uint8("sci.btp_version_cmp", "Result of BTP Version Comparison")

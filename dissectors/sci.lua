@@ -216,7 +216,9 @@ function p_sci.dissector(buf, pktinfo, root)
         if ((buf:range(position+2, 1):le_uint() == 0x40) or (buf:range(position+2, 1):le_uint() == 0x30)) then 
             sci = root:add(p_sci, buf(), "SCI")
             pktinfo.cols.protocol:set("SCI")
-           end
+        else
+            return
+        end
     end
 
     while (pktlen - position) >= 45 do

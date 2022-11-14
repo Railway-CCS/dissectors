@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed endless loop for unknown SCI types.
+- Fixed ignoring packets of exactly 45 bytes length.
+- Field types are now uint32 instead of uint16.
+- Messages are now interpreted as little endian.
+
 ## [1.0.0] - 2021-08-20
 
 - Initial release

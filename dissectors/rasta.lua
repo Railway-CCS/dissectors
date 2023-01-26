@@ -132,7 +132,7 @@ local safety_c_timestamp         = ProtoField.uint32("rasta.safety.cts", "Confir
 local safety_protocol_version    = ProtoField.string("rasta.safety.protocol_version", "Protocol version")
 local safety_n_sendmax           = ProtoField.uint16("rasta.safety.n_sendmax", "N sendmax")
 local safety_reserve             = ProtoField.new("Reserve", "rasta.safety.reserve", ftypes.BYTES)
-local safety_data                = ProtoField.string("rasta.safety.data", "Payload data")
+local safety_data                = ProtoField.new("Payload data", "rasta.safety.data", ftypes.BYTES)
 local safety_detailed            = ProtoField.new("Detailed information", "rasta.safety.detailed", ftypes.BYTES)
 local safety_reason              = ProtoField.uint16("rasta.safety.reason", "Reason", base.DEC, vals_disconnect_reason)
 local safety_safety_code         = ProtoField.new("Safety code", "rasta.safety.safety_code", ftypes.BYTES)
@@ -246,8 +246,15 @@ function p_rasta.dissector(buf, pktinfo, root)
         safety:add_le(safety_reserve, buf:range(42, 8))
     elseif (msg_type:le_uint() == 6240 or msg_type:le_uint() == 6241) then
         -- data and retransmitted data
-        safety:add_le(safety_data,            buf:range(36, data_length - p_rasta.prefs.safety_code_len))
-        
+        local payload = safety:add_le(safety_data, buf:range(36, data_length - p_rasta.prefs.safety_code_len))
+        local pos = 36
+        local max_pos = 36 + data_length - p_rasta.prefs.safety_code_len
+        while  pos < max_pos do
+            local msg_length = buf:range(pos,2):le_uint()
+            payload:add_le(buf:range(pos+2, msg_length):string())
+            pos = pos + 2 + msg_length
+        end
+
         -- call sci-dissector if possible
         if pcall(function () Dissector.get("sci") end) then
             Dissector.get("sci"):call(buf:range(36, data_length - p_rasta.prefs.safety_code_len):tvb(), pktinfo, root)

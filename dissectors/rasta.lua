@@ -310,6 +310,7 @@ local function heuristic_checker(buffer, pinfo, tree)
     else return false end
 end
 
+p_rasta:register_heuristic("tcp", heuristic_checker)
 p_rasta:register_heuristic("udp", heuristic_checker)
 
 

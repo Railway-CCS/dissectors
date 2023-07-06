@@ -262,7 +262,7 @@ function p_rasta.dissector(buf, pktinfo, root)
     elseif (msg_type:le_uint() == 6216) then
         -- disconnect request message
         safety:add_le(safety_detailed, buf:range(36, 2))
-        safety:add(safety_reason, buf:range(38, 2))
+        safety:add_le(safety_reason, buf:range(38, 2))
     end
 
     -- check safety code

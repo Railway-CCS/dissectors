@@ -1,17 +1,17 @@
 -- MIT License
--- 
+--
 -- Copyright (c) 2021
--- 
+--
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to deal
 -- in the Software without restriction, including without limitation the rights
 -- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 -- copies of the Software, and to permit persons to whom the Software is
 -- furnished to do so, subject to the following conditions:
--- 
+--
 -- The above copyright notice and this permission notice shall be included in all
 -- copies or substantial portions of the Software.
--- 
+--
 -- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 -- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 -- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,7 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-local my_info = 
+local my_info =
 {
     version = "1.0.0",
     description = "Dissector to parse the Rail Safe Transport Application (RaSTA) protocol.",
@@ -32,7 +32,7 @@ set_plugin_info(my_info)
 ------------------------
 ---- RASTA PROTOCOL ----
 
--- Wireshark path: 
+-- Wireshark path:
 --      Mac: Contents/Plugins/wireshark
 
 --
@@ -176,54 +176,54 @@ function p_rasta.dissector(buf, pktinfo, root)
 
     -- redundancy layer
     local redundancy = tree:add(p_rasta, buf(), "Redundancy Layer")
-    
+
     redundancy:add_le(redundancy_message_length,    buf:range(0, 2))
     redundancy:add_le(redundancy_reserve_bytes,     buf:range(2, 2))
     redundancy:add_le(redundancy_sequence_number,   buf:range(4, 4))
     local red_code_itm = redundancy:add_le(redundancy_check_code,        buf:range(data_length + 28 + p_rasta.prefs.safety_code_len,
         pktlen - data_length - 28 - p_rasta.prefs.safety_code_len ))
-    
-	-- select crc options from preferences
-	if p_rasta.prefs.crc_algo == CRC_NONE then
-		CRC_OPTION = nil
-		CRC_LENGTH = 0
-	elseif p_rasta.prefs.crc_algo == CRC32_EE5B42FD then
-		CRC_OPTION = CRC.opt_b()
-		
-		CRC_LENGTH = 4
-	elseif p_rasta.prefs.crc_algo == CRC32_1EDC6F41 then
-		CRC_OPTION = CRC.opt_c()
-		CRC_LENGTH = 4
-	elseif p_rasta.prefs.crc_algo == CRC16_1021 then
-		CRC_OPTION = CRC.opt_d()
-		CRC_LENGTH = 2
-	elseif p_rasta.prefs.crc_algo == CRC16_8005 then
-		CRC_OPTION = CRC.opt_e()
-		CRC_LENGTH = 2
-	end
 
-	
-	if CRC_LENGTH > 0 then
-		print("ENTER")
-		-- check redundancy crc code for validity
-		local redundancy_packet = buf:raw(0, pktlen - CRC_OPTION.width/8)
-		local expected_crc = string.format("%0" .. CRC_OPTION.width/4 .."x", swap_endianness(CRC.calculate(CRC_OPTION, redundancy_packet)))
-		local actual_crc = Stream.toHex(Stream.fromString(buf:raw(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8))):lower()
+    -- select crc options from preferences
+    if p_rasta.prefs.crc_algo == CRC_NONE then
+        CRC_OPTION = nil
+        CRC_LENGTH = 0
+    elseif p_rasta.prefs.crc_algo == CRC32_EE5B42FD then
+        CRC_OPTION = CRC.opt_b()
 
-		if ( expected_crc == actual_crc ) then
-		  -- valid CRC      
-		  valid_item = redundancy:add(redundancy_check_code_valid, buf:range(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8), true)
-		  valid_item:set_generated()
-		  print("VALID CRC")   
-		else
-		  -- invalid CRC
-		  red_code_itm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_crc)
-		  
-		  valid_item = redundancy:add(redundancy_check_code_valid, buf:range(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8), false)
-		  valid_item:set_generated()
-		end
+        CRC_LENGTH = 4
+    elseif p_rasta.prefs.crc_algo == CRC32_1EDC6F41 then
+        CRC_OPTION = CRC.opt_c()
+        CRC_LENGTH = 4
+    elseif p_rasta.prefs.crc_algo == CRC16_1021 then
+        CRC_OPTION = CRC.opt_d()
+        CRC_LENGTH = 2
+    elseif p_rasta.prefs.crc_algo == CRC16_8005 then
+        CRC_OPTION = CRC.opt_e()
+        CRC_LENGTH = 2
     end
-        
+
+
+    if CRC_LENGTH > 0 then
+        print("ENTER")
+        -- check redundancy crc code for validity
+        local redundancy_packet = buf:raw(0, pktlen - CRC_OPTION.width/8)
+        local expected_crc = string.format("%0" .. CRC_OPTION.width/4 .."x", swap_endianness(CRC.calculate(CRC_OPTION, redundancy_packet)))
+        local actual_crc = Stream.toHex(Stream.fromString(buf:raw(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8))):lower()
+
+        if ( expected_crc == actual_crc ) then
+          -- valid CRC
+          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8), true)
+          valid_item:set_generated()
+          print("VALID CRC")
+        else
+          -- invalid CRC
+          red_code_itm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_crc)
+
+          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8), false)
+          valid_item:set_generated()
+        end
+    end
+
     -- safety and retransmission layer
     local msg_type = buf:range(10,2)
     pktinfo.cols.info:append(" " .. get_rasta_type_short(msg_type:le_uint()))
@@ -266,34 +266,34 @@ function p_rasta.dissector(buf, pktinfo, root)
     end
 
     -- check safety code
-	if p_rasta.prefs.safety_code_algo == ALGO_MD4 then
-		local safety_packet = buf:raw(8, pktlen - 8 - CRC_LENGTH - p_rasta.prefs.safety_code_len)
-		local packet_md4 = MD4()
-		    .init(p_rasta.prefs.md4_a, p_rasta.prefs.md4_b, p_rasta.prefs.md4_c, p_rasta.prefs.md4_d)
-		    .update(Stream.fromString(safety_packet))
-		    .finish()
-		    .asHex()
-		
-		local expected_md4 = packet_md4:sub(0, p_rasta.prefs.safety_code_len * 2):lower()
-		local actual_md4 = Stream.toHex(Stream.fromString(buf:raw(36 + data_length - 8, 8))):lower()
-		
-		local treeItm = safety:add(safety_safety_code, buf:range(36 + data_length - 8, 8))
-		
-		if ( expected_md4 == actual_md4 ) then
-		  -- valid MD4      
-		  valid_item = safety:add(safety_safety_code_valid, buf:range(36 + data_length - 8, 8), true)
-		  valid_item:set_generated()      
-		else
-		  -- invalid MD4
-		  treeItm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_md4)
-		  
-		  valid_item = safety:add(safety_safety_code_valid, buf:range(36 + data_length - 8, 8), false)
-		  valid_item:set_generated()
-		end
-	else
-		-- blake2b and siphash-2-4 not supported
-		safety:add_expert_info(PI_CHECKSUM, PI_WARN, "Checksum algorithm not supported")
-	end
+    if p_rasta.prefs.safety_code_algo == ALGO_MD4 then
+        local safety_packet = buf:raw(8, pktlen - 8 - CRC_LENGTH - p_rasta.prefs.safety_code_len)
+        local packet_md4 = MD4()
+            .init(p_rasta.prefs.md4_a, p_rasta.prefs.md4_b, p_rasta.prefs.md4_c, p_rasta.prefs.md4_d)
+            .update(Stream.fromString(safety_packet))
+            .finish()
+            .asHex()
+
+        local expected_md4 = packet_md4:sub(0, p_rasta.prefs.safety_code_len * 2):lower()
+        local actual_md4 = Stream.toHex(Stream.fromString(buf:raw(36 + data_length - 8, 8))):lower()
+
+        local treeItm = safety:add(safety_safety_code, buf:range(36 + data_length - 8, 8))
+
+        if ( expected_md4 == actual_md4 ) then
+          -- valid MD4
+          valid_item = safety:add(safety_safety_code_valid, buf:range(36 + data_length - 8, 8), true)
+          valid_item:set_generated()
+        else
+          -- invalid MD4
+          treeItm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_md4)
+
+          valid_item = safety:add(safety_safety_code_valid, buf:range(36 + data_length - 8, 8), false)
+          valid_item:set_generated()
+        end
+    else
+        -- blake2b and siphash-2-4 not supported
+        safety:add_expert_info(PI_CHECKSUM, PI_WARN, "Checksum algorithm not supported")
+    end
 
     return pktlen
 end
@@ -337,10 +337,10 @@ function get_rasta_type_short(type)
 end
 
 function swap_endianness(num)
-	local b0 = bit32.lshift(bit32.band(num, 0x000000ff), 24)
-	local b1 = bit32.lshift(bit32.band(num, 0x0000ff00), 8)
-	local b2 = bit32.rshift(bit32.band(num, 0x00ff0000), 8)
-	local b3 = bit32.rshift(bit32.band(num, 0xff000000), 24)
+    local b0 = bit32.lshift(bit32.band(num, 0x000000ff), 24)
+    local b1 = bit32.lshift(bit32.band(num, 0x0000ff00), 8)
+    local b2 = bit32.rshift(bit32.band(num, 0x00ff0000), 8)
+    local b3 = bit32.rshift(bit32.band(num, 0xff000000), 24)
 
-	return bit32.bor(b0, b1, b2, b3)
+    return bit32.bor(b0, b1, b2, b3)
 end

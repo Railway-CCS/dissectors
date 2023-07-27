@@ -79,11 +79,11 @@ local crc_type = {
 p_rasta.prefs.safety_code_header = Pref.statictext("----- Safety Code -----", "Configuration option for the safety code the send/retransmission layer")
 p_rasta.prefs.safety_code_len = Pref.uint("Length", 8, "Length of the safety code in bytes")
 p_rasta.prefs.safety_code_algo = Pref.enum("Safety Code Algorithm", ALGO_MD4, "Safety Code Algorithm", algo_prefs, false)
-p_rasta.prefs.md4_a = Pref.uint( "MD4 A", 0x67452301, "A value for MD4 safety code calculation as hex string")
-p_rasta.prefs.md4_b = Pref.uint( "MD4 B", 0xefcdab89, "B value for MD4 safety code calculation as hex string")
-p_rasta.prefs.md4_c = Pref.uint( "MD4 C", 0x98badcfe, "C value for MD4 safety code calculation as hex string")
-p_rasta.prefs.md4_d = Pref.uint( "MD4 D", 0x10325476, "D value for MD4 safety code calculation as hex string")
-p_rasta.prefs.safety_key = Pref.uint( "Key", 0x123456, "Key for the safety code when MD4 is not used as hex string")
+p_rasta.prefs.md4_a = Pref.string( "MD4 Initial A (hex)", "67452301", "Initial A value for MD4 safety code calculation as hex string")
+p_rasta.prefs.md4_b = Pref.string( "MD4 Initial B (hex)", "efcdab89", "Initial B value for MD4 safety code calculation as hex string")
+p_rasta.prefs.md4_c = Pref.string( "MD4 Initial C (hex)", "98badcfe", "Initial C value for MD4 safety code calculation as hex string")
+p_rasta.prefs.md4_d = Pref.string( "MD4 Initial D (hex)", "10325476", "Initial D value for MD4 safety code calculation as hex string")
+p_rasta.prefs.safety_key = Pref.uint( "Key", 1193046, "Key for the safety code when MD4 is not used")
 
 -- CRC parameters
 p_rasta.prefs.crc_header = Pref.statictext("----- CRC -----", "Configuration option for the redundancy layer CRC checksum")
@@ -267,9 +267,13 @@ function p_rasta.dissector(buf, pktinfo, root)
 
     -- check safety code
     if p_rasta.prefs.safety_code_algo == ALGO_MD4 then
-        local safety_packet = buf:raw(8, pktlen - 8 - CRC_LENGTH - p_rasta.prefs.safety_code_len)
+        local safety_packet = buf:raw(8, pktlen - 8 - p_rasta.prefs.safety_code_len)
+        local md4_a = tonumber(p_rasta.prefs.md4_a, 16)
+        local md4_b = tonumber(p_rasta.prefs.md4_b, 16)
+        local md4_c = tonumber(p_rasta.prefs.md4_c, 16)
+        local md4_d = tonumber(p_rasta.prefs.md4_d, 16)
         local packet_md4 = MD4()
-            .init(p_rasta.prefs.md4_a, p_rasta.prefs.md4_b, p_rasta.prefs.md4_c, p_rasta.prefs.md4_d)
+            .init(md4_a, md4_b, md4_c, md4_d)
             .update(Stream.fromString(safety_packet))
             .finish()
             .asHex()

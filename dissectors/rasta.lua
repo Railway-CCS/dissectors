@@ -37,7 +37,6 @@ set_plugin_info(my_info)
 
 --
 ------------------------
-package.prepend_path("rasta_modules")
 local MD4 = require("md4");
 local Stream = require("stream");
 local CRC = require("rasta_crc");

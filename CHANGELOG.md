@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2024-02-23
+
+Release v1.1.0
+
 ### Fixed
 
 - Fixed endless loop for unknown SCI types.
@@ -17,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
-[Unreleased]: https://github.com/Railway-CCS/dissectors/compare/v1.0.0...main
+[Unreleased]: https://github.com/Railway-CCS/dissectors/compare/v1.1.0...main
+[1.1.0]: https://github.com/Railway-CCS/dissectors/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Railway-CCS/dissectors/releases/tag/v1.0.0
 

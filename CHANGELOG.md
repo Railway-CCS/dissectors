@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Learned to enable and disable packetization (see §5.5.10 in the standard) via protocol preferences.
+- Learned to enable and disable to handover the payload to the SCI dissector via protocol preferences.
+
 ## [1.1.0] - 2024-02-23
 
 Release v1.1.0

@@ -76,17 +76,19 @@ local crc_type = {
 
 -- safety code parameters
 p_rasta.prefs.safety_code_header = Pref.statictext("----- Safety Code -----", "Configuration option for the safety code the send/retransmission layer")
-p_rasta.prefs.safety_code_len = Pref.uint("Length", 8, "Length of the safety code in bytes")
-p_rasta.prefs.safety_code_algo = Pref.enum("Safety Code Algorithm", ALGO_MD4, "Safety Code Algorithm", algo_prefs, false)
-p_rasta.prefs.md4_a = Pref.string( "MD4 Initial A (hex)", "67452301", "Initial A value for MD4 safety code calculation as hex string")
-p_rasta.prefs.md4_b = Pref.string( "MD4 Initial B (hex)", "efcdab89", "Initial B value for MD4 safety code calculation as hex string")
-p_rasta.prefs.md4_c = Pref.string( "MD4 Initial C (hex)", "98badcfe", "Initial C value for MD4 safety code calculation as hex string")
-p_rasta.prefs.md4_d = Pref.string( "MD4 Initial D (hex)", "10325476", "Initial D value for MD4 safety code calculation as hex string")
-p_rasta.prefs.safety_key = Pref.uint( "Key", 1193046, "Key for the safety code when MD4 is not used")
+p_rasta.prefs.safety_code_len    = Pref.uint("Length", 8, "Length of the safety code in bytes")
+p_rasta.prefs.safety_code_algo   = Pref.enum("Safety Code Algorithm", ALGO_MD4, "Safety Code Algorithm", algo_prefs, false)
+p_rasta.prefs.md4_a              = Pref.string("MD4 Initial A (hex)", "67452301", "Initial A value for MD4 safety code calculation as hex string")
+p_rasta.prefs.md4_b              = Pref.string("MD4 Initial B (hex)", "efcdab89", "Initial B value for MD4 safety code calculation as hex string")
+p_rasta.prefs.md4_c              = Pref.string("MD4 Initial C (hex)", "98badcfe", "Initial C value for MD4 safety code calculation as hex string")
+p_rasta.prefs.md4_d              = Pref.string("MD4 Initial D (hex)", "10325476", "Initial D value for MD4 safety code calculation as hex string")
+p_rasta.prefs.safety_key         = Pref.uint("Key", 1193046, "Key for the safety code when MD4 is not used")
+p_rasta.prefs.packetization      = Pref.bool("Payload Paketization", false, "Paketization for payload data.")
+p_rasta.prefs.sci                = Pref.bool("Parse SCI", false, "Try to parse payload as SCI.")
 
 -- CRC parameters
-p_rasta.prefs.crc_header = Pref.statictext("----- CRC -----", "Configuration option for the redundancy layer CRC checksum")
-p_rasta.prefs.crc_algo = Pref.enum("CRC Type", CRC_NONE, "CRC algorithm parameters", crc_type, false)
+p_rasta.prefs.crc_header         = Pref.statictext("----- CRC -----", "Configuration option for the redundancy layer CRC checksum")
+p_rasta.prefs.crc_algo           = Pref.enum("CRC Type", CRC_NONE, "CRC algorithm parameters", crc_type, false)
 
 
 local vals_message_type = {
@@ -246,16 +248,18 @@ function p_rasta.dissector(buf, pktinfo, root)
     elseif (msg_type:le_uint() == 6240 or msg_type:le_uint() == 6241) then
         -- data and retransmitted data
         local payload = safety:add_le(safety_data, buf:range(36, data_length - p_rasta.prefs.safety_code_len))
-        local pos = 36
-        local max_pos = 36 + data_length - p_rasta.prefs.safety_code_len
-        while  pos < max_pos do
-            local msg_length = buf:range(pos,2):le_uint()
-            payload:add_le(buf:range(pos+2, msg_length):string())
-            pos = pos + 2 + msg_length
+        if p_rasta.prefs.packetization then
+            local pos = 36
+            local max_pos = 36 + data_length - p_rasta.prefs.safety_code_len
+            while  pos < max_pos do
+                local msg_length = buf:range(pos,2):le_uint()
+                payload:add_le(buf:range(pos+2, msg_length):string())
+                pos = pos + 2 + msg_length
+            end
         end
 
         -- call sci-dissector if possible
-        if pcall(function () Dissector.get("sci") end) then
+        if p_rasta.prefs.sci and pcall(function () Dissector.get("sci") end) then
             Dissector.get("sci"):call(buf:range(36, data_length - p_rasta.prefs.safety_code_len):tvb(), pktinfo, root)
         end
     elseif (msg_type:le_uint() == 6216) then

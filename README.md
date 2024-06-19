@@ -18,16 +18,14 @@ See https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html
 
 ## Safety Code Default Values
 
-Due to limitation in Wireshark the initial values for MD4 and the key for Blake2b/SipHash2-4 can only be specified in decimal format in the protocol preferences.
-
 For MD4 the default initial values in decimal are
 
-| Part  | Value      |
-| ---   | ---------: |
-| MD4 A | 1732584193 |
-| MD4 B | 4023233417 |
-| MD4 C | 2562383102 |
-| MD4 D |  271733878 |
+| Part  | Dec        | Hex      |
+| ---   | ---------: | -------- |
+| MD4 A | 1732584193 | 67452301 |
+| MD4 B | 4023233417 | efcdab89 |
+| MD4 C | 2562383102 | 98badcfe |
+| MD4 D |  271733878 | 10325476 |
 
 You can convert any other hex value to decimal using the following shell command:
 ```shell

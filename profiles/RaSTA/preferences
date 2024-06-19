@@ -4331,21 +4331,21 @@ gui.qt.font_name: Consolas,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,Regular
 # (case-insensitive).
 #rasta.safety_code_algo: MD4
 
-# A value for MD4 safety code calculation as hex string
-# A decimal number
-#rasta.md4_a: 1732584193
+# Initial A value for MD4 safety code calculation as hex string
+# A string
+#rasta.md4_a: 67452301
 
-# B value for MD4 safety code calculation as hex string
-# A decimal number
-rasta.md4_b: 4023233417
+# Initial B value for MD4 safety code calculation as hex string
+# A string
+#rasta.md4_b: efcdab89
 
-# C value for MD4 safety code calculation as hex string
-# A decimal number
-rasta.md4_c: 2562383102
+# Initial C value for MD4 safety code calculation as hex string
+# A string
+#rasta.md4_c: 98badcfe
 
-# D value for MD4 safety code calculation as hex string
-# A decimal number
-#rasta.md4_d: 271733878
+# Initial D value for MD4 safety code calculation as hex string
+# A string
+#rasta.md4_d: 10325476
 
 # Key for the safety code when MD4 is not used
 # A decimal number

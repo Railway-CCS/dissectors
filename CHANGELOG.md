@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update profile to Wireshark 4.2.5
 
+### Fixed
+
+- Fix profile default values for RaSTA IV.
+
 ## [1.1.0] - 2024-02-23
 
 Release v1.1.0

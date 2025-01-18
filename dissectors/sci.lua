@@ -231,46 +231,43 @@ function p_sci.dissector(buf, pktinfo, root)
 
         local sci_length = buf(position, 2):le_uint()
         local sci_sub = sci:add(p_sci, buf:range(position, sci_length+2), packet_type)
-            -- read packet length
-            sci_sub:add_le(sci_packet_length, buf(position, 2))
-            position = position + 2
-            -- add sci packet
-            local sci_type = buf:range(position, 1):le_uint()
-            local mtype = buf:range(position + 1, 2):uint()
-            sci_sub:add(sci_protocol_type, buf:range(position, 1))
-            if (sci_type == 0x30) then
-                sci_sub:add_le(sci_ls_message_type, buf:range(position + 1, 2))
+        -- read packet length
+        sci_sub:add_le(sci_packet_length, buf(position, 2))
+        position = position + 2
+        -- add sci packet
+        local sci_type = buf:range(position, 1):le_uint()
+        local mtype = buf:range(position + 1, 2):le_uint()
+        sci_sub:add(sci_protocol_type, buf:range(position, 1))
+        if (sci_type == 0x30) then
+            sci_sub:add_le(sci_ls_message_type, buf:range(position + 1, 2))
 
-				local msgType = sci_ls_msg_types[buf:range(position + 1, 2):le_uint()];
-				if msgType == nil then
-					pktinfo.cols.info:append(" (Unknown Message Type)")
-				else
-					pktinfo.cols.info:append(" (" .. msgType .. ")")
-				end
-            end
-            if (sci_type == 0x40) then
-                sci_sub:add_le(sci_p_message_type, buf:range(position + 1, 2))
+			local msgType = sci_ls_msg_types[buf:range(position + 1, 2):le_uint()];
+			if msgType == nil then
+				pktinfo.cols.info:append(" (Unknown Message Type)")
+			else
+				pktinfo.cols.info:append(" (" .. msgType .. ")")
+			end
+        end
+        if (sci_type == 0x40) then
+            sci_sub:add_le(sci_p_message_type, buf:range(position + 1, 2))
 
-				local msgType = sci_p_msg_types[buf:range(position + 1, 2):le_uint()];
-				if msgType == nil then
-					pktinfo.cols.info:append(" (Unknown Message Type)")
-				else
-					pktinfo.cols.info:append(" (" .. msgType .. ")")
-				end
-            end
+			local msgType = sci_p_msg_types[buf:range(position + 1, 2):le_uint()];
+			if msgType == nil then
+				pktinfo.cols.info:append(" (Unknown Message Type)")
+			else
+				pktinfo.cols.info:append(" (" .. msgType .. ")")
+			end
+        end
 
-			
+        sci_sub:add(sci_src_id , buf:range(position + 3, 20))
+        sci_sub:add(sci_dest_id , buf:range(position + 23, 20))
+        -- data
+        format_data(sci_type, mtype, sci_sub, buf, position)
+        -- sci_sub:add(sci_data , buf:range(position + 43, sci_length - 43))
 
-            sci_sub:add(sci_src_id , buf:range(position + 3, 20))
-            sci_sub:add(sci_dest_id , buf:range(position + 23, 20))
-            -- data
-            format_data(sci_type, mtype, sci_sub, buf, position)
-            -- sci_sub:add(sci_data , buf:range(position + 43, sci_length - 43))
-
-            -- increase position
-            position = position + sci_length
+        -- increase position
+        position = position + sci_length
     end
-
 end
 
 

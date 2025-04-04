@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Utilize Lua 5.3 bitwise operators [#14](https://github.com/Railway-CCS/dissectors/issues/14). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+
 ### Fixed
 
 - Fix assuming wrong endianess: [#13](https://github.com/Railway-CCS/dissectors/issues/13)
@@ -16,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Learn to enable and disable packetization (see §5.5.10 in the standard) via protocol preferences.
 - Learn to enable and disable to handover the payload to the SCI dissector via protocol preferences.
-- Utilize Lua 5.3 bitwise operators [#14](https://github.com/Railway-CCS/dissectors/issues/14). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
 
 ### Changed
 

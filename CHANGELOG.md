@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix assuming wrong endianess: [#13](https://github.com/Railway-CCS/dissectors/issues/13)
+- Fix assuming wrong endianess: [#13](https://github.com/Railway-CCS/dissectors/issues/13). Thanks to [m435r0](https://github.com/m435r0).
 
 ## [1.2.0] - 2024-06-19
 

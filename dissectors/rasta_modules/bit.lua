@@ -9,28 +9,29 @@ local my_info =
 
 set_plugin_info(my_info)
 
+local bit = nil
 
-local ok, e
-if not ok then
-	ok, e = pcall(require, "bit") -- the LuaJIT one ?
+if _VERSION == "Lua 5.2" then
+    local ok, e = pcall(require, "bit32")  -- Try bit32 (Lua 5.2)
+    if ok then bit = e end
+elseif _VERSION == "Lua 5.1" then
+    local ok, e = pcall(require, "bit")  -- Try LuaJIT bit library
+    if not ok then
+        ok, e = pcall(require, "bit.numberlua")  -- Try numberlua for Lua 5.1
+    end
+    if ok then bit = e end
+else
+    -- Lua 5.3+ uses built-in bitwise operators
+    bit = {
+        band = function(a, b) return a & b end,
+        bor = function(a, b) return a | b end,
+        bxor = function(a, b) return a ~ b end,
+        rshift = function(a, n) return a >> n end,
+        lshift = function(a, n) return a << n end,
+        bnot = function(a) return ~a end,
+		lrotate = function(a, n) return (a << n) | (a >> (32 - n)) end,
+		rrotate = function(a, n) return (a >> n) | (a << (32 - n)) end
+    }
 end
-if not ok then
-	ok, e = pcall(require, "bit32") -- Lua 5.2
-end
-if not ok then
-	ok, e = pcall(require, "bit.numberlua") -- for Lua 5.1, https://github.com/tst2005/lua-bit-numberlua/
-end
-if not ok then
-	error("no bitwise support found", 2)
-end
-assert(type(e)=="table", "invalid bit module")
 
--- Workaround to support Lua 5.2 bit32 API with the LuaJIT bit one
-if e.rol and not e.lrotate then
-	e.lrotate = e.rol
-end
-if e.ror and not e.rrotate then
-	e.rrotate = e.ror
-end
-
-return e
+return bit  -- Return the selected bitwise library (or table for Lua 5.3+)

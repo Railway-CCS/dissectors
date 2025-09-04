@@ -11,21 +11,16 @@ set_plugin_info(my_info)
 
 local bit = nil
 
-print(_VERSION)
-
 if _VERSION == "Lua 5.2" then
-    print("A")
     local ok, e = pcall(require, "bit32")  -- Try bit32 (Lua 5.2)
     if ok then bit = e end
 elseif _VERSION == "Lua 5.1" then
-    print("B")
     local ok, e = pcall(require, "bit")  -- Try LuaJIT bit library
     if not ok then
         ok, e = pcall(require, "bit.numberlua")  -- Try numberlua for Lua 5.1
     end
     if ok then bit = e end
 else
-    print("C")
     -- Lua 5.3+ uses built-in bitwise operators
     bit = require("bit54")
 end

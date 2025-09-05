@@ -54,11 +54,9 @@ local ALGO_MD4 = 0
 local ALGO_BLAKE2 = 1
 local ALGO_SIPHASH = 2
 
-local algo_prefs = {
-    {1, "MD4", ALGO_MD4},
-    {2, "Blake2b", ALGO_BLAKE2},
-    {3, "SIPHASH-2-4", ALGO_SIPHASH},
-}
+local SAFETY_CODE_NO = 0
+local SAFETY_CODE_HALF = 8
+local SAFETY_CODE_FULL = 16
 
 local CRC_NONE = 0
 local CRC32_EE5B42FD = 1
@@ -66,18 +64,18 @@ local CRC32_1EDC6F41 = 2
 local CRC16_1021 = 3
 local CRC16_8005 = 4
 
-local crc_type = {
-    {1, "None (Option A)", CRC_NONE},
-    {1, "CRC32, Poly=EE5B42FD (Option B)", CRC32_EE5B42FD},
-    {1, "CRC32, Poly=1EDC6F41 (Option C)", CRC32_1EDC6F41},
-    {1, "CRC16, Poly=1021(Option D)", CRC16_1021},
-    {1, "CRC16, Poly=8005(Option E)", CRC16_8005},
-}
-
 -- safety code parameters
 p_rasta.prefs.safety_code_header = Pref.statictext("----- Safety Code -----", "Configuration option for the safety code the send/retransmission layer")
-p_rasta.prefs.safety_code_len    = Pref.uint("Length", 8, "Length of the safety code in bytes")
-p_rasta.prefs.safety_code_algo   = Pref.enum("Safety Code Algorithm", ALGO_MD4, "Safety Code Algorithm", algo_prefs, false)
+p_rasta.prefs.safety_code_len    = Pref.enum("Safety Code Option", SAFETY_CODE_HALF, "Safety Code Option", {
+                                        {1, "No", SAFETY_CODE_NO},
+                                        {2, "Lower Half", SAFETY_CODE_HALF},
+                                        {3, "Full", SAFETY_CODE_FULL}
+                                    }, false)
+p_rasta.prefs.safety_code_algo   = Pref.enum("Safety Code Algorithm", ALGO_MD4, "Safety Code Algorithm", {
+                                        {1, "MD4", ALGO_MD4},
+                                        {2, "Blake2b", ALGO_BLAKE2},
+                                        {3, "SIPHASH-2-4", ALGO_SIPHASH},
+                                    }, false)
 p_rasta.prefs.md4_a              = Pref.string("MD4 Initial A (hex)", "67452301", "Initial A value for MD4 safety code calculation as hex string")
 p_rasta.prefs.md4_b              = Pref.string("MD4 Initial B (hex)", "efcdab89", "Initial B value for MD4 safety code calculation as hex string")
 p_rasta.prefs.md4_c              = Pref.string("MD4 Initial C (hex)", "98badcfe", "Initial C value for MD4 safety code calculation as hex string")
@@ -88,7 +86,13 @@ p_rasta.prefs.sci                = Pref.bool("Parse SCI", false, "Try to parse p
 
 -- CRC parameters
 p_rasta.prefs.crc_header         = Pref.statictext("----- CRC -----", "Configuration option for the redundancy layer CRC checksum")
-p_rasta.prefs.crc_algo           = Pref.enum("CRC Type", CRC_NONE, "CRC algorithm parameters", crc_type, false)
+p_rasta.prefs.crc_algo           = Pref.enum("CRC Type", CRC_NONE, "CRC algorithm parameters", {
+                                        {1, "None (Option A)", CRC_NONE},
+                                        {2, "CRC32, Poly=EE5B42FD (Option B)", CRC32_EE5B42FD},
+                                        {3, "CRC32, Poly=1EDC6F41 (Option C)", CRC32_1EDC6F41},
+                                        {4, "CRC16, Poly=1021(Option D)", CRC16_1021},
+                                        {5, "CRC16, Poly=8005(Option E)", CRC16_8005},
+                                    }, false)
 
 
 local vals_message_type = {

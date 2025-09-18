@@ -176,8 +176,10 @@ function p_rasta.dissector(buf, pktinfo, root)
 
     local pktlen = buf:reported_length_remaining()
     local tree = root:add(p_rasta, buf:range(0, pktlen))
-    local data_length = buf:range(8,2):le_uint() - 28
-    -- print(pktlen)
+    local safety_length = buf:range(8,2):le_uint()
+    local data_length = safety_length - 28 - p_rasta.prefs.safety_code_len
+    print("pktlen=" .. pktlen)
+    print("data_length=" .. data_length)
 
     -- redundancy layer
     local redundancy = tree:add(p_rasta, buf(), "Redundancy Layer")
@@ -185,8 +187,6 @@ function p_rasta.dissector(buf, pktinfo, root)
     redundancy:add_le(redundancy_message_length,    buf:range(0, 2))
     redundancy:add_le(redundancy_reserve_bytes,     buf:range(2, 2))
     redundancy:add_le(redundancy_sequence_number,   buf:range(4, 4))
-    local red_code_itm = redundancy:add_le(redundancy_check_code,        buf:range(data_length + 28 + p_rasta.prefs.safety_code_len,
-        pktlen - data_length - 28 - p_rasta.prefs.safety_code_len ))
 
     -- select crc options from preferences
     if p_rasta.prefs.crc_algo == CRC_NONE then
@@ -194,7 +194,6 @@ function p_rasta.dissector(buf, pktinfo, root)
         CRC_LENGTH = 0
     elseif p_rasta.prefs.crc_algo == CRC32_EE5B42FD then
         CRC_OPTION = CRC.opt_b()
-
         CRC_LENGTH = 4
     elseif p_rasta.prefs.crc_algo == CRC32_1EDC6F41 then
         CRC_OPTION = CRC.opt_c()
@@ -211,6 +210,8 @@ function p_rasta.dissector(buf, pktinfo, root)
     if CRC_LENGTH > 0 then
         print("ENTER")
         -- check redundancy crc code for validity
+        local red_code_itm = redundancy:add_le(redundancy_check_code, buf:range(pktlen - CRC_LENGTH, CRC_LENGTH))
+
         local redundancy_packet = buf:raw(0, pktlen - CRC_OPTION.width/8)
         local expected_crc = string.format("%0" .. CRC_OPTION.width/4 .."x", swap_endianness(CRC.calculate(CRC_OPTION, redundancy_packet)))
         local actual_crc = Stream.toHex(Stream.fromString(buf:raw(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8))):lower()
@@ -233,7 +234,7 @@ function p_rasta.dissector(buf, pktinfo, root)
     local msg_type = buf:range(10,2)
     pktinfo.cols.info:append(" " .. get_rasta_type_short(msg_type:le_uint()))
 
-    local safety = tree:add(p_rasta,  buf:range(8, 28 + data_length), "Safety and Retransmission Layer")
+    local safety = tree:add(p_rasta,  buf:range(8, safety_length), "Safety and Retransmission Layer")
 
     safety:add_le(safety_message_length,      buf:range(8, 2))
     safety:add_le(safety_message_type,        buf:range(10, 2))
@@ -274,7 +275,7 @@ function p_rasta.dissector(buf, pktinfo, root)
 
     -- check safety code
     if p_rasta.prefs.safety_code_algo == ALGO_MD4 then
-        local safety_packet = buf:raw(8, pktlen - 8 - p_rasta.prefs.safety_code_len)
+        local safety_packet = buf:raw(8, safety_length - p_rasta.prefs.safety_code_len)
         local md4_a = tonumber(p_rasta.prefs.md4_a, 16)
         local md4_b = tonumber(p_rasta.prefs.md4_b, 16)
         local md4_c = tonumber(p_rasta.prefs.md4_c, 16)
@@ -286,19 +287,21 @@ function p_rasta.dissector(buf, pktinfo, root)
             .asHex()
 
         local expected_md4 = packet_md4:sub(0, p_rasta.prefs.safety_code_len * 2):lower()
-        local actual_md4 = Stream.toHex(Stream.fromString(buf:raw(36 + data_length - 8, 8))):lower()
+        local actual_md4 = Stream.toHex(Stream.fromString(buf:raw(36 + data_length, p_rasta.prefs.safety_code_len))):lower()
 
-        local treeItm = safety:add(safety_safety_code, buf:range(36 + data_length - 8, 8))
+        local treeItm = safety:add(safety_safety_code, buf:range(36 + data_length, p_rasta.prefs.safety_code_len))
 
+        print(expected_md4 .. "|")
+        print(actual_md4 .. "|")
         if ( expected_md4 == actual_md4 ) then
           -- valid MD4
-          valid_item = safety:add(safety_safety_code_valid, buf:range(36 + data_length - 8, 8), true)
+          valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), true)
           valid_item:set_generated()
         else
           -- invalid MD4
           treeItm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_md4)
 
-          valid_item = safety:add(safety_safety_code_valid, buf:range(36 + data_length - 8, 8), false)
+          valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), false)
           valid_item:set_generated()
         end
     else

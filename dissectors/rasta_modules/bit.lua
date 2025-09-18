@@ -22,16 +22,7 @@ elseif _VERSION == "Lua 5.1" then
     if ok then bit = e end
 else
     -- Lua 5.3+ uses built-in bitwise operators
-    bit = {
-        band = function(a, b) return a & b end,
-        bor = function(a, b) return a | b end,
-        bxor = function(a, b) return a ~ b end,
-        rshift = function(a, n) return a >> n end,
-        lshift = function(a, n) return a << n end,
-        bnot = function(a) return ~a end,
-		lrotate = function(a, n) return (a << n) | (a >> (32 - n)) end,
-		rrotate = function(a, n) return (a >> n) | (a << (32 - n)) end
-    }
+    bit = require("bit54")
 end
 
 return bit  -- Return the selected bitwise library (or table for Lua 5.3+)

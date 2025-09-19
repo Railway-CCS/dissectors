@@ -252,10 +252,10 @@ function p_rasta.dissector(buf, pktinfo, root)
         safety:add_le(safety_reserve, buf:range(42, 8))
     elseif (msg_type:le_uint() == 6240 or msg_type:le_uint() == 6241) then
         -- data and retransmitted data
-        local payload = safety:add_le(safety_data, buf:range(36, data_length - p_rasta.prefs.safety_code_len))
+        local payload = safety:add_le(safety_data, buf:range(36, data_length))
         if p_rasta.prefs.packetization then
             local pos = 36
-            local max_pos = 36 + data_length - p_rasta.prefs.safety_code_len
+            local max_pos = 36 + data_length
             while  pos < max_pos do
                 local msg_length = buf:range(pos,2):le_uint()
                 payload:add_le(buf:range(pos+2, msg_length):string())
@@ -265,7 +265,7 @@ function p_rasta.dissector(buf, pktinfo, root)
 
         -- call sci-dissector if possible
         if p_rasta.prefs.sci and pcall(function () Dissector.get("sci") end) then
-            Dissector.get("sci"):call(buf:range(36, data_length - p_rasta.prefs.safety_code_len):tvb(), pktinfo, root)
+            Dissector.get("sci"):call(buf:range(36, data_length):tvb(), pktinfo, root)
         end
     elseif (msg_type:le_uint() == 6216) then
         -- disconnect request message

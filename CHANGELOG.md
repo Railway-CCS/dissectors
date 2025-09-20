@@ -6,9 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add two example dumps.
+
+### Changed
+
+- Make `Safety Code Length` option an enum instead of integer.
+- Capitalize protocol field names.
+
 ### Fixed
 
 - Fix MD4 implementation with Lua 5.3 bitwise operators.
+- Fix dissector messing up the length of the safety code.
 
 ## [1.3.0] - 2025-04-04
 

@@ -31,7 +31,6 @@ set_plugin_info(my_info)
 
 ------------------------
 --- SCI-P & SCI-LS -----
---
 ------------------------
 
 local p_sci = Proto("sci", "SCI Protocol")

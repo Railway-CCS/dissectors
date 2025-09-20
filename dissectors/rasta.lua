@@ -122,7 +122,7 @@ local safety_c_timestamp         = ProtoField.uint32("rasta.safety.cts", "Confir
 local safety_protocol_version    = ProtoField.string("rasta.safety.protocol_version", "Protocol Version")
 local safety_n_sendmax           = ProtoField.uint16("rasta.safety.n_sendmax", "N sendmax")
 local safety_reserve             = ProtoField.new("Reserve", "rasta.safety.reserve", ftypes.BYTES)
-local safety_data                = ProtoField.new("Payload Data", "rasta.safety.data", ftypes.BYTES)
+local safety_data                = ProtoField.string("rasta.safety.data", "Payload Data")
 local safety_detailed            = ProtoField.new("Detailed Information", "rasta.safety.detailed", ftypes.BYTES)
 local safety_reason              = ProtoField.uint16("rasta.safety.reason", "Reason", base.DEC, vals_disconnect_reason)
 local safety_safety_code         = ProtoField.new("Safety Code", "rasta.safety.safety_code", ftypes.BYTES)
@@ -242,23 +242,27 @@ function p_rasta.dissector(buf, pktinfo, root)
         safety:add(safety_protocol_version, buf:range(36, 4))
         safety:add_le(safety_n_sendmax, buf:range(40, 2))
         safety:add_le(safety_reserve, buf:range(42, 8))
+
     elseif (msg_type:le_uint() == 6240 or msg_type:le_uint() == 6241) then
         -- data and retransmitted data
-        local payload = safety:add_le(safety_data, buf:range(36, data_length))
+        
+        local payload = safety:add(safety_data, buf:range(36, data_length), data_length .. " bytes")
+        
         if p_rasta.prefs.packetization then
             local pos = 36
             local max_pos = 36 + data_length
             while  pos < max_pos do
                 local msg_length = buf:range(pos,2):le_uint()
-                payload:add_le(buf:range(pos+2, msg_length):string())
+                payload:add_le(buf:range(pos+2, msg_length), msg_length .. " bytes")
                 pos = pos + 2 + msg_length
             end
         end
 
-        -- call sci-dissector if possible
+        -- call SCI dissector if possible
         if p_rasta.prefs.sci and pcall(function () Dissector.get("sci") end) then
             Dissector.get("sci"):call(buf:range(36, data_length):tvb(), pktinfo, root)
         end
+
     elseif (msg_type:le_uint() == 6216) then
         -- disconnect request message
         safety:add_le(safety_detailed, buf:range(36, 2))

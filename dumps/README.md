@@ -13,7 +13,7 @@ Created with the open source RaSTA implementation: https://github.com/Railway-CC
 | CRC Type              | Option A: None |
 | Safety Code           | Lower Half     |
 | MD4 IV                | default        |
-| Payload Packetization | yes            |
+| Payload Packetization | no             |
 
 ## rasta_from_standard.pcapng
 

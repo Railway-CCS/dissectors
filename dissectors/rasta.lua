@@ -31,12 +31,8 @@ set_plugin_info(my_info)
 
 ------------------------
 ---- RASTA PROTOCOL ----
-
--- Wireshark path:
---      Mac: Contents/Plugins/wireshark
-
---
 ------------------------
+
 local MD4 = require("md4");
 local Stream = require("stream");
 local CRC = require("rasta_crc");
@@ -64,8 +60,13 @@ local CRC32_1EDC6F41 = 2
 local CRC16_1021 = 3
 local CRC16_8005 = 4
 
--- safety code parameters
-p_rasta.prefs.safety_code_header = Pref.statictext("----- Safety Code -----", "Configuration option for the safety code the send/retransmission layer")
+p_rasta.prefs.crc_algo           = Pref.enum("CRC Type", CRC_NONE, "CRC algorithm parameters", {
+                                        {1, "None (Option A)", CRC_NONE},
+                                        {2, "CRC32, Poly=EE5B42FD (Option B)", CRC32_EE5B42FD},
+                                        {3, "CRC32, Poly=1EDC6F41 (Option C)", CRC32_1EDC6F41},
+                                        {4, "CRC16, Poly=1021(Option D)", CRC16_1021},
+                                        {5, "CRC16, Poly=8005(Option E)", CRC16_8005},
+                                    }, false)
 p_rasta.prefs.safety_code_len    = Pref.enum("Safety Code Option", SAFETY_CODE_HALF, "Safety Code Option", {
                                         {1, "No", SAFETY_CODE_NO},
                                         {2, "Lower Half", SAFETY_CODE_HALF},
@@ -83,17 +84,6 @@ p_rasta.prefs.md4_d              = Pref.string("MD4 Initial D (hex)", "10325476"
 p_rasta.prefs.safety_key         = Pref.uint("Key", 1193046, "Key for the safety code when MD4 is not used")
 p_rasta.prefs.packetization      = Pref.bool("Payload Packetization", false, "Packetization for payload data.")
 p_rasta.prefs.sci                = Pref.bool("Parse SCI", false, "Try to parse payload as SCI.")
-
--- CRC parameters
-p_rasta.prefs.crc_header         = Pref.statictext("----- CRC -----", "Configuration option for the redundancy layer CRC checksum")
-p_rasta.prefs.crc_algo           = Pref.enum("CRC Type", CRC_NONE, "CRC algorithm parameters", {
-                                        {1, "None (Option A)", CRC_NONE},
-                                        {2, "CRC32, Poly=EE5B42FD (Option B)", CRC32_EE5B42FD},
-                                        {3, "CRC32, Poly=1EDC6F41 (Option C)", CRC32_1EDC6F41},
-                                        {4, "CRC16, Poly=1021(Option D)", CRC16_1021},
-                                        {5, "CRC16, Poly=8005(Option E)", CRC16_8005},
-                                    }, false)
-
 
 local vals_message_type = {
     [6200] = "Connection Request",
@@ -118,14 +108,14 @@ local vals_disconnect_reason = {
     [8] = "error in the protocol sequence"
 }
 
--- redundancy properties
+-- redundancy layer protocol fields
 local redundancy_message_length     = ProtoField.uint16("rasta.redundancy.mlen", "Length")
 local redundancy_reserve_bytes      = ProtoField.uint16("rasta.redundancy.reserve", "Reserve")
 local redundancy_sequence_number    = ProtoField.uint32("rasta.redundancy.sn", "Sequence Number")
 local redundancy_check_code         = ProtoField.new("Check Code", "rasta.redundancy.check_code", ftypes.BYTES)
 local redundancy_check_code_valid   = ProtoField.new("Check Code valid", "rasta.redundancy.check_code_valid", ftypes.BOOLEAN)
 
--- rasta properties
+-- safety and retransmission layer protocol fields
 local safety_message_length      = ProtoField.uint16("rasta.safety.mlen", "Message Length")
 local safety_message_type        = ProtoField.uint16("rasta.safety.type", "Message Type", base.DEC, vals_message_type)
 local safety_dest_id             = ProtoField.uint32("rasta.safety.dest_id", "Receiver Identification")
@@ -145,13 +135,13 @@ local safety_safety_code_valid   = ProtoField.new("Safety Code valid", "rasta.sa
 
 
 p_rasta.fields = {
--- rasta redundancy packet
+-- redundancy layer
     redundancy_message_length,
     redundancy_reserve_bytes,
     redundancy_sequence_number,
     redundancy_check_code,
     redundancy_check_code_valid,
--- rasta packet
+-- safety and retransmission layer
     safety_message_length,
     safety_message_type,
     safety_dest_id,
@@ -170,16 +160,20 @@ p_rasta.fields = {
     safety_safety_code_valid
 }
 
--- redundancy dissector
 function p_rasta.dissector(buf, pktinfo, root)
     pktinfo.cols.protocol:set("RaSTA")
 
     local pktlen = buf:reported_length_remaining()
     local tree = root:add(p_rasta, buf:range(0, pktlen))
+    
+    -- length of the entire safety and retransmission layer PDU, as provided by the respective protocol field.
     local safety_length = buf:range(8,2):le_uint()
+
+    -- length of the actual payload data. Should be 0 for non data packets.
     local data_length = safety_length - 28 - p_rasta.prefs.safety_code_len
-    print("pktlen=" .. pktlen)
-    print("data_length=" .. data_length)
+
+    -- print("pktlen=" .. pktlen)
+    -- print("data_length=" .. data_length)
 
     -- redundancy layer
     local redundancy = tree:add(p_rasta, buf(), "Redundancy Layer")
@@ -291,8 +285,8 @@ function p_rasta.dissector(buf, pktinfo, root)
 
         local treeItm = safety:add(safety_safety_code, buf:range(36 + data_length, p_rasta.prefs.safety_code_len))
 
-        print(expected_md4 .. "|")
-        print(actual_md4 .. "|")
+        -- print(expected_md4 .. "|")
+        -- print(actual_md4 .. "|")
         if ( expected_md4 == actual_md4 ) then
           -- valid MD4
           valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), true)
@@ -346,7 +340,7 @@ function get_rasta_type_short(type)
     elseif  (type == 6220) then  return "HB"
     elseif  (type == 6240) then  return "Data"
     elseif  (type == 6241) then  return "RetrData"
-    else                            return "unknown type"
+    else                         return "unknown type"
     end
 end
 

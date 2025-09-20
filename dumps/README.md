@@ -8,6 +8,7 @@ Two redundancy channels via different ports (not NICs).
 
 Created with the open source RaSTA implementation: https://github.com/Railway-CCS/rasta-protocol
 
+| Property              | Value      |
 | ---                   | ---        |
 | Safety Code           | Lower Half |
 | MD4 IV                | default    |

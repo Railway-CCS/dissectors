@@ -81,7 +81,7 @@ p_rasta.prefs.md4_b              = Pref.string("MD4 Initial B (hex)", "efcdab89"
 p_rasta.prefs.md4_c              = Pref.string("MD4 Initial C (hex)", "98badcfe", "Initial C value for MD4 safety code calculation as hex string")
 p_rasta.prefs.md4_d              = Pref.string("MD4 Initial D (hex)", "10325476", "Initial D value for MD4 safety code calculation as hex string")
 p_rasta.prefs.safety_key         = Pref.uint("Key", 1193046, "Key for the safety code when MD4 is not used")
-p_rasta.prefs.packetization      = Pref.bool("Payload Paketization", false, "Paketization for payload data.")
+p_rasta.prefs.packetization      = Pref.bool("Payload Packetization", false, "Packetization for payload data.")
 p_rasta.prefs.sci                = Pref.bool("Parse SCI", false, "Try to parse payload as SCI.")
 
 -- CRC parameters

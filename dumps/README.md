@@ -8,6 +8,7 @@ Two redundancy channels via different ports (not NICs).
 
 Created with the open source RaSTA implementation: https://github.com/Railway-CCS/rasta-protocol
 
+| ---                   | ---        |
 | Safety Code           | Lower Half |
 | MD4 IV                | default    |
 | Payload Packetization | yes        |
@@ -25,3 +26,9 @@ A dump containing 6 manually created heartbeats taken from the RaSTA standard.
 | 5   | Lower Half         | Modified |
 | 6   | Full               | Modified |
 
+| Part  | Default  | Modified |
+| ---   | -------- | -------- |
+| MD4 A | 67452301 | afb16782 |
+| MD4 B | efcdab89 | 304c59de |
+| MD4 C | 98badcfe | 98badcfe |
+| MD4 D | 10325476 | 10325476 |

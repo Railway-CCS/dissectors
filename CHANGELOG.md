@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add two example dumps.
+- SCI learned to select endianess via preference option. See [#13](https://github.com/Railway-CCS/dissectors/issues/13)
 
 ### Changed
 

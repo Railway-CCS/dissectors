@@ -34,6 +34,15 @@ set_plugin_info(my_info)
 ------------------------
 
 local p_sci = Proto("sci", "SCI Protocol")
+
+local ENC_BE = 0
+local ENC_LE = 1
+
+p_sci.prefs.endianess = Pref.enum("Endianess", ENC_LE, "Endianess", {
+    {1, "Little Endian", ENC_LE},
+    {2, "Big Endian", ENC_BE}
+}, true)
+
 local valuestring_zs3 = {
     [0x00] = "Not used",
     [0x01] = "Number 1",
@@ -235,11 +244,19 @@ function p_sci.dissector(buf, pktinfo, root)
         position = position + 2
         -- add sci packet
         local sci_type = buf:range(position, 1):le_uint()
-        local mtype = buf:range(position + 1, 2):le_uint()
+        local mtype = nil
+        if p_sci.prefs.endianess == ENC_LE then
+            mtype = buf:range(position + 1, 2):le_uint()
+        else
+            mtype = buf:range(position + 1, 2):uint()
+        end
         sci_sub:add(sci_protocol_type, buf:range(position, 1))
         if (sci_type == 0x30) then
-            sci_sub:add_le(sci_ls_message_type, buf:range(position + 1, 2))
-
+            if p_sci.prefs.endianess == ENC_LE then
+                sci_sub:add_le(sci_ls_message_type, buf:range(position + 1, 2))
+            else
+                sci_sub:add(sci_ls_message_type, buf:range(position + 1, 2))
+            end
 			local msgType = sci_ls_msg_types[mtype];
 			if msgType == nil then
 				pktinfo.cols.info:append(" (Unknown Message Type)")
@@ -248,8 +265,11 @@ function p_sci.dissector(buf, pktinfo, root)
 			end
         end
         if (sci_type == 0x40) then
-            sci_sub:add_le(sci_p_message_type, buf:range(position + 1, 2))
-
+            if p_sci.prefs.endianess == ENC_LE then
+                sci_sub:add_le(sci_p_message_type, buf:range(position + 1, 2))
+            else
+                sci_sub:add_le(sci_p_message_type, buf:range(position + 1, 2))
+            end
 			local msgType = sci_p_msg_types[mtype];
 			if msgType == nil then
 				pktinfo.cols.info:append(" (Unknown Message Type)")

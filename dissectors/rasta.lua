@@ -269,34 +269,36 @@ function p_rasta.dissector(buf, pktinfo, root)
 
     -- check safety code
     if p_rasta.prefs.safety_code_algo == ALGO_MD4 then
-        local safety_packet = buf:raw(8, safety_length - p_rasta.prefs.safety_code_len)
-        local md4_a = tonumber(p_rasta.prefs.md4_a, 16)
-        local md4_b = tonumber(p_rasta.prefs.md4_b, 16)
-        local md4_c = tonumber(p_rasta.prefs.md4_c, 16)
-        local md4_d = tonumber(p_rasta.prefs.md4_d, 16)
-        local packet_md4 = MD4()
-            .init(md4_a, md4_b, md4_c, md4_d)
-            .update(Stream.fromString(safety_packet))
-            .finish()
-            .asHex()
+        if p_rasta.prefs.safety_code_len > 0 then
+            local safety_packet = buf:raw(8, safety_length - p_rasta.prefs.safety_code_len)
+            local md4_a = tonumber(p_rasta.prefs.md4_a, 16)
+            local md4_b = tonumber(p_rasta.prefs.md4_b, 16)
+            local md4_c = tonumber(p_rasta.prefs.md4_c, 16)
+            local md4_d = tonumber(p_rasta.prefs.md4_d, 16)
+            local packet_md4 = MD4()
+                .init(md4_a, md4_b, md4_c, md4_d)
+                .update(Stream.fromString(safety_packet))
+                .finish()
+                .asHex()
 
-        local expected_md4 = packet_md4:sub(0, p_rasta.prefs.safety_code_len * 2):lower()
-        local actual_md4 = Stream.toHex(Stream.fromString(buf:raw(36 + data_length, p_rasta.prefs.safety_code_len))):lower()
+            local expected_md4 = packet_md4:sub(0, p_rasta.prefs.safety_code_len * 2):lower()
+            local actual_md4 = Stream.toHex(Stream.fromString(buf:raw(36 + data_length, p_rasta.prefs.safety_code_len))):lower()
 
-        local treeItm = safety:add(safety_safety_code, buf:range(36 + data_length, p_rasta.prefs.safety_code_len))
+            local treeItm = safety:add(safety_safety_code, buf:range(36 + data_length, p_rasta.prefs.safety_code_len))
 
-        -- print(expected_md4 .. "|")
-        -- print(actual_md4 .. "|")
-        if ( expected_md4 == actual_md4 ) then
-          -- valid MD4
-          valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), true)
-          valid_item:set_generated()
-        else
-          -- invalid MD4
-          treeItm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_md4)
+            -- print(expected_md4 .. "|")
+            -- print(actual_md4 .. "|")
+            if ( expected_md4 == actual_md4 ) then
+              -- valid MD4
+              valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), true)
+              valid_item:set_generated()
+            else
+              -- invalid MD4
+              treeItm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_md4)
 
-          valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), false)
-          valid_item:set_generated()
+              valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), false)
+              valid_item:set_generated()
+            end
         end
     else
         -- blake2b and siphash-2-4 not supported

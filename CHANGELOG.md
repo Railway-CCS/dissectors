@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Make `Safety Code Length` option an enum instead of integer.
 - Capitalize protocol field names.
+- Show Safety Code field only if length > 0.
 
 ### Fixed
 

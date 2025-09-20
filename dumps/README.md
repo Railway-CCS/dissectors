@@ -8,11 +8,12 @@ Two redundancy channels via different ports (not NICs).
 
 Created with the open source RaSTA implementation: https://github.com/Railway-CCS/rasta-protocol
 
-| Property              | Value      |
-| ---                   | ---        |
-| Safety Code           | Lower Half |
-| MD4 IV                | default    |
-| Payload Packetization | yes        |
+| Property              | Value          |
+| ---                   | ---            |
+| CRC Type              | Option A: None |
+| Safety Code           | Lower Half     |
+| MD4 IV                | default        |
+| Payload Packetization | yes            |
 
 ## rasta_from_standard.pcapng
 

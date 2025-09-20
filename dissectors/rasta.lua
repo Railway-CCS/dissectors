@@ -61,11 +61,11 @@ local CRC16_1021 = 3
 local CRC16_8005 = 4
 
 p_rasta.prefs.crc_algo           = Pref.enum("CRC Type", CRC_NONE, "CRC algorithm parameters", {
-                                        {1, "None (Option A)", CRC_NONE},
-                                        {2, "CRC32, Poly=EE5B42FD (Option B)", CRC32_EE5B42FD},
-                                        {3, "CRC32, Poly=1EDC6F41 (Option C)", CRC32_1EDC6F41},
-                                        {4, "CRC16, Poly=1021(Option D)", CRC16_1021},
-                                        {5, "CRC16, Poly=8005(Option E)", CRC16_8005},
+                                        {1, "A: None", CRC_NONE},
+                                        {2, "B: CRC32, Poly=EE5B42FD", CRC32_EE5B42FD},
+                                        {3, "C: CRC32, Poly=1EDC6F41", CRC32_1EDC6F41},
+                                        {4, "D: CRC16, Poly=1021", CRC16_1021},
+                                        {5, "E: CRC16, Poly=8005", CRC16_8005},
                                     }, false)
 p_rasta.prefs.safety_code_len    = Pref.enum("Safety Code Option", SAFETY_CODE_HALF, "Safety Code Option", {
                                         {1, "No", SAFETY_CODE_NO},

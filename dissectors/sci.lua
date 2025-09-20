@@ -241,7 +241,7 @@ function p_sci.dissector(buf, pktinfo, root)
         if (sci_type == 0x30) then
             sci_sub:add_le(sci_ls_message_type, buf:range(position + 1, 2))
 
-			local msgType = sci_ls_msg_types[buf:range(position + 1, 2):le_uint()];
+			local msgType = sci_ls_msg_types[mtype];
 			if msgType == nil then
 				pktinfo.cols.info:append(" (Unknown Message Type)")
 			else
@@ -251,7 +251,7 @@ function p_sci.dissector(buf, pktinfo, root)
         if (sci_type == 0x40) then
             sci_sub:add_le(sci_p_message_type, buf:range(position + 1, 2))
 
-			local msgType = sci_p_msg_types[buf:range(position + 1, 2):le_uint()];
+			local msgType = sci_p_msg_types[mtype];
 			if msgType == nil then
 				pktinfo.cols.info:append(" (Unknown Message Type)")
 			else

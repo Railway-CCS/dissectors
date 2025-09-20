@@ -37,11 +37,6 @@ local MD4 = require("md4");
 local Stream = require("stream");
 local CRC = require("rasta_crc");
 
-local CRC_LENGTH = 0
-local CRC_OPTION = nil
-
--- print("#######################")
-
 local p_rasta = Proto("rasta", "RaSTA Protocol")
 
 -- Register preferences --
@@ -183,6 +178,8 @@ function p_rasta.dissector(buf, pktinfo, root)
     redundancy:add_le(redundancy_sequence_number,   buf:range(4, 4))
 
     -- select crc options from preferences
+    local CRC_LENGTH = 0
+    local CRC_OPTION = nil
     if p_rasta.prefs.crc_algo == CRC_NONE then
         CRC_OPTION = nil
         CRC_LENGTH = 0
@@ -200,6 +197,7 @@ function p_rasta.dissector(buf, pktinfo, root)
         CRC_LENGTH = 2
     end
 
+    -- print("CRC_LENGTH: " .. CRC_LENGTH)
 
     if CRC_LENGTH > 0 then
         print("ENTER")

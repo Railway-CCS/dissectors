@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add two example dumps.
-- SCI learned to select endianess via preference option. See [#13](https://github.com/Railway-CCS/dissectors/issues/13)
+- SCI learned to select endianess via preference option. See [#13](https://github.com/Railway-CCS/dissectors/issues/13).
 
 ### Changed
 
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix MD4 implementation with Lua 5.3 bitwise operators.
+- Fix MD4 implementation with Lua 5.3 bitwise operators. Fixes [#15](https://github.com/Railway-CCS/dissectors/issues/15).
 - Fix dissector messing up the length of the safety code.
 
 ## [1.3.0] - 2025-04-04

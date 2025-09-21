@@ -38,10 +38,10 @@ local p_sci = Proto("sci", "SCI Protocol")
 local ENC_BE = 0
 local ENC_LE = 1
 
-p_sci.prefs.endianess = Pref.enum("Endianess", ENC_LE, "Endianess", {
+p_sci.prefs.endianess = Pref.enum("Message Type Endianess", ENC_LE, "Endianess for Message Type Protocol Field", {
     {1, "Little Endian", ENC_LE},
     {2, "Big Endian", ENC_BE}
-}, true)
+}, false)
 
 local valuestring_zs3 = {
     [0x00] = "Not used",

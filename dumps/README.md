@@ -8,19 +8,22 @@ Two redundancy channels via different ports (not NICs).
 
 Created with the open source RaSTA implementation: https://github.com/Railway-CCS/rasta-protocol
 
-| Property              | Value          |
-| ---                   | ---            |
-| CRC Type              | Option A: None |
-| Safety Code           | Lower Half     |
-| MD4 IV                | default        |
-| Payload Packetization | no             |
+Make sure the dissectors are configured as follows:
+
+| Dissector | Property               | Value          |
+| --------- | ---------------------- | -------------- |
+| RaSTA     | CRC Type               | Option A: None |
+| RaSTA     | Safety Code            | Lower Half     |
+| RaSTA     | MD4 IV                 | default        |
+| RaSTA     | Payload Packetization  | no             |
+| SCI       | Message Type Endianess | Big Endian     |
 
 ## rasta_from_standard.pcapng
 
 A dump containing 6 manually created heartbeats taken from the RaSTA standard.
 
 | No  | Safety Code Length | IV       |
-| --- | ---                | ---      |
+| --- | ------------------ | -------- |
 | 1   | No                 | Default  |
 | 2   | Lower Half         | Default  |
 | 3   | Full               | Default  |

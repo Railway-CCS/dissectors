@@ -197,20 +197,19 @@ function p_rasta.dissector(buf, pktinfo, root)
         -- check redundancy crc code for validity
         local red_code_itm = redundancy:add_le(redundancy_check_code, buf:range(pktlen - CRC_LENGTH, CRC_LENGTH))
 
-        local redundancy_packet = buf:raw(0, pktlen - CRC_OPTION.width/8)
-        local expected_crc = string.format("%0" .. CRC_OPTION.width/4 .."x", swap_endianness(CRC.calculate(CRC_OPTION, redundancy_packet)))
+        local expected_crc = string.format("%0" .. CRC_OPTION.width/4 .."x", swap_endianness(CRC.calculate(CRC_OPTION, buf:raw(0, pktlen - CRC_LENGTH))))
         local actual_crc = Stream.toHex(Stream.fromString(buf:raw(pktlen - CRC_LENGTH, CRC_LENGTH))):lower()
 
         if ( expected_crc == actual_crc ) then
           -- valid CRC
-          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(pktlen - CRC_LENGTH, CRC_LENGTH), true)
+          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(0, pktlen - CRC_LENGTH), true)
           valid_item:set_generated()
           print("VALID CRC")
         else
           -- invalid CRC
           red_code_itm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_crc)
 
-          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(pktlen - CRC_LENGTH, CRC_LENGTH), false)
+          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(0, pktlen - CRC_LENGTH), false)
           valid_item:set_generated()
         end
     end

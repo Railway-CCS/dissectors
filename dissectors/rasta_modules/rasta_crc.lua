@@ -198,7 +198,7 @@ function crc.reflect(crc_in, n)
 	local j = 1
 	local crc_out = 0
 
-  local i = bit32.lshift(1, n-1)
+    local i = bit32.lshift(1, n-1)
 	for i=bit32.lshift(1, n-1), i, bit32.rshift(i, 1) do
 		if bit32.band(crc_in, i) == 1 then
 			crc_out = bit32.bor(crc_out, j)
@@ -206,6 +206,7 @@ function crc.reflect(crc_in, n)
 		
 		j = bit32.lshift(j, 1)
 	end
+    return crc_out
 end
 
 function crc.calculate(options, bytes)

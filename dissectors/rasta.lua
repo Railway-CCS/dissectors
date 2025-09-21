@@ -161,16 +161,9 @@ function p_rasta.dissector(buf, pktinfo, root)
     local pktlen = buf:reported_length_remaining()
     local tree = root:add(p_rasta, buf:range(0, pktlen))
     
-    -- length of the entire safety and retransmission layer PDU, as provided by the respective protocol field.
-    local safety_length = buf:range(8,2):le_uint()
-
-    -- length of the actual payload data. Should be 0 for non data packets.
-    local data_length = safety_length - 28 - p_rasta.prefs.safety_code_len
-
-    -- print("pktlen=" .. pktlen)
-    -- print("data_length=" .. data_length)
-
-    -- redundancy layer
+    ----------------------
+    -- redundancy layer --
+    ----------------------
     local redundancy = tree:add(p_rasta, buf(), "Redundancy Layer")
 
     redundancy:add_le(redundancy_message_length,    buf:range(0, 2))
@@ -206,23 +199,35 @@ function p_rasta.dissector(buf, pktinfo, root)
 
         local redundancy_packet = buf:raw(0, pktlen - CRC_OPTION.width/8)
         local expected_crc = string.format("%0" .. CRC_OPTION.width/4 .."x", swap_endianness(CRC.calculate(CRC_OPTION, redundancy_packet)))
-        local actual_crc = Stream.toHex(Stream.fromString(buf:raw(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8))):lower()
+        local actual_crc = Stream.toHex(Stream.fromString(buf:raw(pktlen - CRC_LENGTH, CRC_LENGTH))):lower()
 
         if ( expected_crc == actual_crc ) then
           -- valid CRC
-          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8), true)
+          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(pktlen - CRC_LENGTH, CRC_LENGTH), true)
           valid_item:set_generated()
           print("VALID CRC")
         else
           -- invalid CRC
           red_code_itm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_crc)
 
-          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(data_length + 28 + p_rasta.prefs.safety_code_len, CRC_OPTION.width/8), false)
+          valid_item = redundancy:add(redundancy_check_code_valid, buf:range(pktlen - CRC_LENGTH, CRC_LENGTH), false)
           valid_item:set_generated()
         end
     end
 
-    -- safety and retransmission layer
+    -------------------------------------
+    -- safety and retransmission layer --
+    -------------------------------------
+
+    -- length of the entire safety and retransmission layer PDU, as provided by the respective protocol field.
+    local safety_length = buf:range(8,2):le_uint()
+
+    -- length of the actual payload data. Should be 0 for non data packets.
+    local data_length = safety_length - 28 - p_rasta.prefs.safety_code_len
+
+    -- print("pktlen=" .. pktlen)
+    -- print("data_length=" .. data_length)
+
     local msg_type = buf:range(10,2)
     pktinfo.cols.info:append(" " .. get_rasta_type_short(msg_type:le_uint()))
 

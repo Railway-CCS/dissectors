@@ -24,7 +24,7 @@
 
 local my_info = 
 {
-    version = "1.3.0",
+    version = "1.4.0",
     description = "Implementation of a queue (FIFO)",
     repository = "https://github.com/Railway-CCS/dissectors"
 }

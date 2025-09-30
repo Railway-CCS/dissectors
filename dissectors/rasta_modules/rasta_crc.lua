@@ -1,6 +1,6 @@
 local my_info = 
 {
-    version = "1.3.0",
+    version = "1.4.0",
     description = "CRC implementation.",
     repository = "https://github.com/Railway-CCS/dissectors"
 }

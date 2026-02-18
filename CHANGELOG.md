@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- RaSTA dissector now provides automatic request/response packet correlation via sequence number matching. Original requests show "Request In" links to their responses, and responses show "Response In" links back to the original requests. This enables users to quickly navigate between correlated packets in the protocol tree.
+
 ## [1.4.1] - 2025-12-01
 
 ### Fixed

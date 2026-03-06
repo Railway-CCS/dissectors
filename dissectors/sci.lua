@@ -159,8 +159,7 @@ local sci_p_message_type    = ProtoField.uint16("sci.message_type", "Message Typ
 
 local sci_src_id            = ProtoField.string("sci.src_id", "Sender Identifier")
 local sci_dest_id           = ProtoField.string("sci.dest_id", "Receiver Identifier")
-local sci_btp_version       = ProtoField.uint8("sci.btp_version", "BTP Version")
-local sci_btp_version_2     = ProtoField.uint8("sci.btp_version", "BTP Version in Subsystem")
+local sci_btp_version       = ProtoField.uint8("sci.btp_version", "PDI-Version of Sender")
 local sci_btp_version_cmp   = ProtoField.uint8("sci.btp_version_cmp", "Result of BTP Version Comparison")
 local sci_crc_length        = ProtoField.uint8("sci.crc_length", "Length of Check Code")
 local sci_crc               = ProtoField.uint64("sci.crc", "Check Code")
@@ -309,7 +308,6 @@ p_sci.fields = {
         sci_dest_id,
         sci_src_id,
         sci_btp_version,
-        sci_btp_version_2,
         sci_btp_version_cmp,
         sci_crc_length,
         sci_crc,
@@ -428,7 +426,6 @@ function p_sci.dissector(buf, pktinfo, root)
         sci_sub:add(sci_dest_id , buf:range(position + 23, 20))
         -- data
         format_data(sci_type, mtype, sci_sub, buf, position)
-        -- sci_sub:add(sci_data , buf:range(position + 43, sci_length - 43))
 
         -- increase position
         position = position + sci_length
@@ -441,20 +438,29 @@ end
 -------
 
 function format_data(sci_type, mtype, sci_sub, buf, position)
-    -- SCI-LS
-    if (sci_type == 0x30) then
+    -- SCI-Generic
+    if (sci_type == 0x30) or (sci_type == 0x40) or (sci_type == 0x20) then
         if (mtype == 0x0024) then
             sci_sub:add(sci_btp_version, buf:range(43+position, 1))
         end
         if (mtype == 0x0025) then
             sci_sub:add(sci_btp_version_cmp, buf:range(43+position, 1))
-            sci_sub:add(sci_btp_version_2, buf:range(44+position, 1))
+            sci_sub:add(sci_btp_version, buf:range(44+position, 1))
             sci_sub:add(sci_crc_length, buf:range(45+position, 1))
             local l = buf:range(45+position, 1):le_uint()
             if (l > 0) then
                 sci_sub:add(sci_crc, buf:range(46+position, l))
             end
         end
+        if (mtype == 0x0027) then
+            sci_sub:add(sci_close_reason, buf:range(43+position, 1))
+        end
+        if (mtype == 0x002B) then
+            sci_sub:add(sci_reset_reason, buf:range(43+position, 1))
+        end
+    end
+    -- SCI-LS
+    if (sci_type == 0x30) then
         if (mtype == 0x0001) then
             sci_sub:add(sci_nd1, buf:range(43+position, 1))
             sci_sub:add(sci_nd2, buf:range(44+position, 1))
@@ -484,18 +490,6 @@ function format_data(sci_type, mtype, sci_sub, buf, position)
     end
     -- SCI-P
     if (sci_type == 0x40) then
-        if (mtype == 0x0024) then
-            sci_sub:add(sci_btp_version_2, buf:range(43+position, 1))
-        end
-        if (mtype == 0x0025) then
-            sci_sub:add(sci_btp_version_cmp, buf:range(43+position, 1))
-            sci_sub:add(sci_btp_version_2, buf:range(44+position, 1))
-            sci_sub:add(sci_crc_length, buf:range(45+position, 1))
-            local l = buf:range(45+position, 1):le_uint()
-            if (l > 0) then
-                sci_sub:add(sci_crc, buf:range(46+position, l))
-            end
-        end
         if (mtype == 0x0001) then
             sci_sub:add(sci_gate, buf:range(43+position, 1))
         end
@@ -505,25 +499,6 @@ function format_data(sci_type, mtype, sci_sub, buf, position)
     end
     -- SCI-TDS
     if (sci_type == 0x20) then
-        -- 
-        if (mtype == 0x0024) then
-            sci_sub:add(sci_btp_version_2, buf:range(43+position, 1))
-        end
-        if (mtype == 0x0025) then
-            sci_sub:add(sci_btp_version_cmp, buf:range(43+position, 1))
-            sci_sub:add(sci_btp_version_2, buf:range(44+position, 1))
-            sci_sub:add(sci_crc_length, buf:range(45+position, 1))
-            local l = buf:range(45+position, 1):le_uint()
-            if (l > 0) then
-                sci_sub:add(sci_crc, buf:range(46+position, l))
-            end
-        end
-        if (mtype == 0x0027) then
-            sci_sub:add(sci_close_reason, buf:range(43+position, 1))
-        end
-        if (mtype == 0x002B) then
-            sci_sub:add(sci_reset_reason, buf:range(43+position, 1))
-        end
         if (mtype == 0x0006) then
             sci_sub:add(sci_tds_reason_for_rejection, buf:range(43+position, 1))
         end

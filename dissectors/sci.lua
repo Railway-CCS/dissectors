@@ -30,8 +30,9 @@ local my_info =
 set_plugin_info(my_info)
 
 ------------------------
---- SCI-P & SCI-LS -----
+--------- SCI  ---------
 ------------------------
+-- SCI-TDS is baseline 4.3
 
 local p_sci = Proto("sci", "SCI Protocol")
 
@@ -99,7 +100,8 @@ valuestring_zs2 = {
 local sci_packet_length     = ProtoField.uint16("sci.packet_length", "Packet Length")
 local sci_protocol_type     = ProtoField.uint8("sci.type", "Protocol Type", base.HEX, {
     [0x30] = "SCI-LS",
-    [0x40] = "SCI-P"
+    [0x40] = "SCI-P",
+    [0x20] = "SCI-TDS"
 })
 
 local sci_ls_msg_types = {
@@ -115,6 +117,32 @@ local sci_ls_msg_types = {
 }
 
 local sci_ls_message_type   = ProtoField.uint16("sci.message_type", "Message Type", base.HEX, sci_ls_msg_types)
+
+local sci_tds_msg_types = {
+        [0x0024] = "Request for version comparison",
+        [0x0025] = "Response to version comparison",
+        [0x0021] = "Request for sending of status information",
+        [0x0022] = "Transmission of status information begins",
+        [0x0023] = "Transmission of status information ended",
+        [0x0026] = "Status report completed",
+        [0x0027] = "Request to close PDI connection",
+        [0x0028] = "Release PDI for maintenance",
+        [0x0029] = "PDI available",
+        [0x002A] = "PDI connection is not available",
+        [0x002B] = "Reset PDI",
+        [0x0001] = "FC",
+        [0x0002] = "Update filling level",
+        [0x0003] = "DRFC",
+        [0x0008] = "Cancel",
+        [0x0006] = "Command Rejected",
+        [0x0007] = "TVPS occupancy status",
+        [0x0010] = "TVPS FC-P failed",
+        [0x0011] = "TVPS FC-P-A failed",
+        [0x0012] = "Additional information",
+        [0x000B] = "TDP status"
+}
+
+local sci_tds_message_type   = ProtoField.uint16("sci.message_type", "Message Type", base.HEX, sci_tds_msg_types)
 
 local sci_p_msg_types = {
         [0x0024] = "Request for version comparison",
@@ -185,12 +213,98 @@ local sci_nd9               = ProtoField.uint8("sci.nd9", "Signal Aspect Intenti
 local sci_nd10              = ProtoField.uint8("sci.nd10", "Luminosity")
 local sci_gate              = ProtoField.uint8("sci.gate", "Point Position")
 local sci_gate_2            = ProtoField.uint8("sci.gate_2", "Point Position")
+local sci_close_reason      = ProtoField.uint8("sci.close_reason", "Close Reason")
+local sci_reset_reason      = ProtoField.uint8("sci.reset_reason", "Reset Reason")
+
+local sci_tds_occ_status    = ProtoField.uint8("sci.tds_occ_status", "Occupancy Status", base.HEX, {
+    [0x01] = "vacant",
+    [0x02] = "occupied",
+    [0x03] = "disturbed",
+    [0x04] = "waiting for a sweeping train after FC-P-A or FC-P command",
+    [0x05] = "waiting for an acknowledgment after FC-P-A command",
+    [0x06] = "sweeping train detected"
+})
+
+local sci_tds_forced_to_clr    = ProtoField.uint8("sci.tds_forced_to_clr", "Ability to be forced to clear", base.HEX, {
+    [0x01] = "not able to be forced to clear",
+    [0x02] = "able to be forced to clear",
+})
+
+local sci_tds_filling_level    = ProtoField.uint16("sci.tds_filling_level", "Filling Level", base.HEX)
+
+local sci_tds_pom    = ProtoField.uint8("sci.tds_pom", "POM Status", base.HEX, {
+    [0x01] = "Power supply OK",
+    [0x02] = "Power supply not OK",
+    [0xFF] = "POM Status is not applicable",
+})
+
+local sci_tds_disturbance_status    = ProtoField.uint8("sci.tds_disturbance_status", "Disturbance Status", base.HEX, {
+    [0x01] = "Disturbance is operational",
+    [0x02] = "Disturbance is technical",
+    [0xFF] = "Disturbance status is not applicable",
+})
+
+local sci_tds_change_trigger    = ProtoField.uint8("sci.tds_change_trigger", "Change Trigger", base.HEX, {
+    [0x01] = "Passing detected",
+    [0x02] = "Command from EIL accepted",
+    [0x03] = "Command from maintainer accepted",
+    [0x04] = "Technical failure",
+    [0x05] = "Initial section state",
+    [0x06] = "Internal trigger",
+    [0xFF] = "Change Trigger is not applicable",
+})
+
+local sci_tds_state_of_passing = ProtoField.uint8("sci.tds_state_of_passing", "State of passing", base.HEX, {
+    [0x01] = "not passed",
+    [0x02] = "passed",
+    [0x03] = "disturbed"
+})
+local sci_tds_dir_of_passing   = ProtoField.uint8("sci.tds_dir_of_passing", "Direction of passing", base.HEX, {
+    [0x01] = "reference direction",
+    [0x02] = "against reference direction",
+    [0x03] = "without indicated direction"
+})
+
+local sci_tds_reason_for_rejection   = ProtoField.uint8("sci.tds_reason_for_rejection", "Reason for rejection", base.HEX, {
+    [0x01] = "operational rejected",
+    [0x02] = "technical rejected"
+})
+
+local sci_tds_reason_for_failure   = ProtoField.uint8("sci.tds_reason_for_failure", "Reason for failure", base.HEX, {
+    [0x01] = "incorrect count of the sweeping train",
+    [0x02] = "Timeout 'Con_tmax_Response_Time_FC_P' had expired",
+    [0x03] = "Bounding detection point is configured as not permitted for FC-P",
+    [0x04] = "Intentionally deleted",
+    [0x05] = "Outgoing axle detected before expiration of minimum timer",
+    [0x06] = "Process cancelled"
+})
+
+local sci_tds_reason_for_failure2   = ProtoField.uint8("sci.tds_reason_for_failure", "Reason for failure", base.HEX, {
+    [0x01] = "incorrect count of the sweeping train",
+    [0x02] = "Timeout 'Con_tmax_Response_Time_FC_P_A' had expired",
+    [0x03] = "Bounding detection point is configured as not permitted for FC-P-A",
+    [0x04] = "Intentionally deleted",
+    [0x05] = "Outgoing axle detected before expiration of minimum timer",
+    [0x06] = "Process cancelled"
+})
+
+local sci_tds_speed    = ProtoField.uint16("sci.tds_speed", "Speed km/h", base.HEX)
+local sci_tds_wheel_dia = ProtoField.uint16("sci.tds_wheel_dia", "Wheel dia mm", base.HEX)
+
+local sci_tds_mode_of_fc   = ProtoField.uint8("sci.tds_mode_of_fc", "Mode of FC", base.HEX, {
+    [0x01] = "FC-U",
+    [0x02] = "FC-C",
+    [0x03] = "FC-P-A",
+    [0x04] = "FC-P",
+    [0x05] = "Acknowledgment after FC-P-A command"
+})
 
 p_sci.fields = {
     -- sci packet
         sci_packet_length,
         sci_protocol_type,
         sci_ls_message_type,
+        sci_tds_message_type,
         sci_p_message_type,
         sci_dest_id,
         sci_src_id,
@@ -210,7 +324,23 @@ p_sci.fields = {
         sci_nd9,
         sci_nd10,
         sci_gate,
-        sci_gate_2
+        sci_gate_2,
+        sci_close_reason,
+        sci_reset_reason,
+        sci_tds_occ_status,
+        sci_tds_forced_to_clr,
+        sci_tds_filling_level,
+        sci_tds_pom,
+        sci_tds_disturbance_status,
+        sci_tds_change_trigger,
+        sci_tds_state_of_passing,
+        sci_tds_dir_of_passing,
+        sci_tds_reason_for_rejection,
+        sci_tds_reason_for_failure,
+        sci_tds_reason_for_failure2,
+        sci_tds_speed,
+        sci_tds_wheel_dia,
+        sci_tds_mode_of_fc
     }
 
 function p_sci.dissector(buf, pktinfo, root)
@@ -219,9 +349,11 @@ function p_sci.dissector(buf, pktinfo, root)
     local sci = nil
     local position = 0
 
-    -- SCI-P packet
+    -- included SCI packet
     if (pktlen - position) >= 45 then
-        if ((buf:range(position+2, 1):le_uint() == 0x40) or (buf:range(position+2, 1):le_uint() == 0x30)) then 
+        if ((buf:range(position+2, 1):le_uint() == 0x40) or 
+            (buf:range(position+2, 1):le_uint() == 0x30) or
+            (buf:range(position+2, 1):le_uint() == 0x20)) then 
             sci = root:add(p_sci, buf(), "SCI")
             pktinfo.cols.protocol:set("SCI")
         else
@@ -234,6 +366,7 @@ function p_sci.dissector(buf, pktinfo, root)
 
         if (buf:range(position+2, 1):le_uint() == 0x40) then packet_type = "SCI-P"
         elseif (buf:range(position+2, 1):le_uint() == 0x30) then packet_type = "SCI-LS"
+        elseif (buf:range(position+2, 1):le_uint() == 0x20) then packet_type = "SCI-TDS"
         else packet_type = "not an SCI-X Packet"
         end
 
@@ -276,6 +409,19 @@ function p_sci.dissector(buf, pktinfo, root)
 			else
 				pktinfo.cols.info:append(" (" .. msgType .. ")")
 			end
+        end
+        if (sci_type == 0x20) then
+            if p_sci.prefs.endianess == ENC_LE then
+                sci_sub:add_le(sci_tds_message_type, buf:range(position + 1, 2))
+            else
+                sci_sub:add_le(sci_tds_message_type, buf:range(position + 1, 2))
+            end
+            local msgType = sci_tds_msg_types[mtype];
+            if msgType == nil then
+                pktinfo.cols.info:append(" (Unknown Message Type)")
+            else
+                pktinfo.cols.info:append(" (" .. msgType .. ")")
+            end
         end
 
         sci_sub:add(sci_src_id , buf:range(position + 3, 20))
@@ -355,6 +501,56 @@ function format_data(sci_type, mtype, sci_sub, buf, position)
         end
         if (mtype == 0x000B) then
             sci_sub:add(sci_gate_2, buf:range(43+position, 1))
+        end
+    end
+    -- SCI-TDS
+    if (sci_type == 0x20) then
+        -- 
+        if (mtype == 0x0024) then
+            sci_sub:add(sci_btp_version_2, buf:range(43+position, 1))
+        end
+        if (mtype == 0x0025) then
+            sci_sub:add(sci_btp_version_cmp, buf:range(43+position, 1))
+            sci_sub:add(sci_btp_version_2, buf:range(44+position, 1))
+            sci_sub:add(sci_crc_length, buf:range(45+position, 1))
+            local l = buf:range(45+position, 1):le_uint()
+            if (l > 0) then
+                sci_sub:add(sci_crc, buf:range(46+position, l))
+            end
+        end
+        if (mtype == 0x0027) then
+            sci_sub:add(sci_close_reason, buf:range(43+position, 1))
+        end
+        if (mtype == 0x002B) then
+            sci_sub:add(sci_reset_reason, buf:range(43+position, 1))
+        end
+        if (mtype == 0x0006) then
+            sci_sub:add(sci_tds_reason_for_rejection, buf:range(43+position, 1))
+        end
+        if (mtype == 0x0007) then
+            sci_sub:add(sci_tds_occ_status, buf:range(43+position, 1))
+            sci_sub:add(sci_tds_forced_to_clr, buf:range(44+position, 1))
+            sci_sub:add(sci_tds_filling_level, buf:range(45+position, 2))
+            sci_sub:add(sci_tds_pom, buf:range(47+position, 1))
+            sci_sub:add(sci_tds_disturbance_status, buf:range(48+position, 1))
+            sci_sub:add(sci_tds_change_trigger, buf:range(49+position, 1))
+        end
+        if (mtype == 0x000B) then
+            sci_sub:add(sci_tds_state_of_passing, buf:range(43+position, 1))
+            sci_sub:add(sci_tds_dir_of_passing, buf:range(44+position, 1))
+        end
+        if (mtype == 0x0010) then
+            sci_sub:add(sci_tds_reason_for_failure, buf:range(43+position, 1))
+        end
+        if (mtype == 0x0011) then
+            sci_sub:add(sci_tds_reason_for_failure2, buf:range(43+position, 1))
+        end
+        if (mtype == 0x0012) then
+            sci_sub:add(sci_tds_speed, buf:range(43+position, 2))
+            sci_sub:add(sci_tds_wheel_dia, buf:range(45+position, 2))
+        end
+        if (mtype == 0x0001) then
+            sci_sub:add(sci_tds_mode_of_fc, buf:range(43+position, 1))
         end
     end
 end

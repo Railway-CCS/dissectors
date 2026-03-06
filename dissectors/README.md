@@ -5,7 +5,6 @@ Dissector for the following protocols:
 * RaSTA
 * SCI-LS
 * SCI-P
-* SCI-TDS
 
 ## RaSTA Packet Types
 
@@ -33,7 +32,5 @@ Dissector for the following protocols:
 | SCI-CC   | `0x70` |
 | SCI-RBC  | `0x80` |
 | SCI-IO   | `0x90` |
-
-Parsing SCI is disabled by default. Change in Preferences => Protocols => RASTA => 'Parse SCI'.
 
 Note: Several versions of named SCI-Protocols are used in various environments.

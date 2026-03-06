@@ -117,6 +117,8 @@ local safety_dest_id             = ProtoField.uint32("rasta.safety.dest_id", "Re
 local safety_src_id              = ProtoField.uint32("rasta.safety.src_id", "Sender Identification")
 local safety_sequence_number     = ProtoField.uint32("rasta.safety.sn", "Sequence Number")
 local safety_c_sequence_number   = ProtoField.uint32("rasta.safety.cs", "Confirmed Sequence Number")
+local safety_request_in          = ProtoField.framenum("rasta.safety.request_in",  "Request In",  base.NONE, frametype.REQUEST)
+local safety_response_in         = ProtoField.framenum("rasta.safety.response_in", "Response In", base.NONE, frametype.RESPONSE)
 local safety_timestamp           = ProtoField.uint32("rasta.safety.ts", "Time Stamp")
 local safety_c_timestamp         = ProtoField.uint32("rasta.safety.cts", "Confirmed Time Stamp")
 local safety_protocol_version    = ProtoField.string("rasta.safety.protocol_version", "Protocol Version")
@@ -128,6 +130,8 @@ local safety_reason              = ProtoField.uint16("rasta.safety.reason", "Rea
 local safety_safety_code         = ProtoField.new("Safety Code", "rasta.safety.safety_code", ftypes.BYTES)
 local safety_safety_code_valid   = ProtoField.new("Safety Code valid", "rasta.safety.safety_code_valid", ftypes.BOOLEAN)
 
+local rasta_sn_table = {}   -- (src:sn)  -> frame number of that packet
+local rasta_cs_table = {}   -- (src:sn)  -> frame number that confirmed (CS'd) it
 
 p_rasta.fields = {
 -- redundancy layer
@@ -143,6 +147,8 @@ p_rasta.fields = {
     safety_src_id,
     safety_sequence_number,
     safety_c_sequence_number,
+    safety_request_in,
+    safety_response_in,
     safety_timestamp,
     safety_c_timestamp,
     safety_data,
@@ -240,6 +246,44 @@ function p_rasta.dissector(buf, pktinfo, root)
     safety:add_le(safety_c_sequence_number,   buf:range(24, 4))
     safety:add_le(safety_timestamp,           buf:range(28, 4))
     safety:add_le(safety_c_timestamp,         buf:range(32, 4))
+
+    
+    local sn  = buf:range(20, 4):le_uint()
+    local cs  = buf:range(24, 4):le_uint()
+    local src = buf:range(16, 4):le_uint()
+    local dst = buf:range(12, 4):le_uint()
+
+    -- Record this packet: keyed by (sender, sn) so that a future CS from the peer can find it.
+    local sn_key = string.format("%d:%d", src, sn)
+    if not rasta_sn_table[sn_key] then
+        rasta_sn_table[sn_key] = pktinfo.number
+    end
+
+    -- This packet's CS acknowledges a packet previously sent by 'dst' with SN == cs.
+    -- Look up that original packet and:
+    --   1. Add a "Response In" link on the original packet (request_in shown on the response side).
+    --   2. Add a "Request In"   link on this packet pointing back to the original.
+    local cs_key = string.format("%d:%d", dst, cs)
+    local original_frame = rasta_sn_table[cs_key]
+    if original_frame then
+        -- "Response In" on this packet: the original request is at original_frame
+        local resp_item = safety:add(safety_response_in, buf:range(24, 4), original_frame)
+        resp_item:set_generated()
+
+        -- Remember that original_frame was confirmed/responded-to by our current frame.
+        -- This is used when the original packet is dissected (on reload) to show "Request In".
+        if not rasta_cs_table[cs_key] then
+            rasta_cs_table[cs_key] = pktinfo.number
+        end
+    end
+
+    -- If a later packet has already recorded a response for our SN, show it here.
+    local response_frame = rasta_cs_table[sn_key]
+    if response_frame then
+        local req_item = safety:add(safety_request_in, buf:range(20, 4), response_frame)
+        req_item:set_generated()
+    end
+
 
     if (msg_type:le_uint() == 6200 or msg_type:le_uint() == 6201) then
         -- connection request or connection response

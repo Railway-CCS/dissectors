@@ -238,14 +238,19 @@ function p_rasta.dissector(buf, pktinfo, root)
 
     local safety = tree:add(p_rasta,  buf:range(8, safety_length), "Safety and Retransmission Layer")
 
+    -------------------
+    -- Safety Header --
+    -------------------
     safety:add_le(safety_message_length,      buf:range(8, 2))
     safety:add_le(safety_message_type,        buf:range(10, 2))
     safety:add_le(safety_dest_id,             buf:range(12, 4))
     safety:add_le(safety_src_id,              buf:range(16, 4))
+
+    ----------------------
+    -- Sequence Numbers --
+    ----------------------
     safety:add_le(safety_sequence_number,     buf:range(20, 4))
     safety:add_le(safety_c_sequence_number,   buf:range(24, 4))
-    safety:add_le(safety_timestamp,           buf:range(28, 4))
-    safety:add_le(safety_c_timestamp,         buf:range(32, 4))
 
     
     local sn  = buf:range(20, 4):le_uint()
@@ -259,7 +264,7 @@ function p_rasta.dissector(buf, pktinfo, root)
         rasta_sn_table[sn_key] = pktinfo.number
     end
 
-    -- This packet's CS acknowledges a packet previously sent by 'dst' with SN == cs.
+    -- This packet's CS acknowledges a packet previously sent by 'dst' with SN == CS.
     -- Look up that original packet and:
     --   1. Add a "Response In" link on the original packet (request_in shown on the response side).
     --   2. Add a "Request In"   link on this packet pointing back to the original.
@@ -267,7 +272,7 @@ function p_rasta.dissector(buf, pktinfo, root)
     local original_frame = rasta_sn_table[cs_key]
     if original_frame then
         -- "Response In" on this packet: the original request is at original_frame
-        local resp_item = safety:add(safety_response_in, buf:range(24, 4), original_frame)
+        local resp_item = safety:add(safety_request_in, buf:range(24, 4), original_frame)
         resp_item:set_generated()
 
         -- Remember that original_frame was confirmed/responded-to by our current frame.
@@ -280,11 +285,19 @@ function p_rasta.dissector(buf, pktinfo, root)
     -- If a later packet has already recorded a response for our SN, show it here.
     local response_frame = rasta_cs_table[sn_key]
     if response_frame then
-        local req_item = safety:add(safety_request_in, buf:range(20, 4), response_frame)
+        local req_item = safety:add(safety_response_in, buf:range(20, 4), response_frame)
         req_item:set_generated()
     end
 
+    ----------------
+    -- Timestamps --
+    ----------------
+    safety:add_le(safety_timestamp,           buf:range(28, 4))
+    safety:add_le(safety_c_timestamp,         buf:range(32, 4))
 
+    -------------
+    -- Payload --
+    -------------
     if (msg_type:le_uint() == 6200 or msg_type:le_uint() == 6201) then
         -- connection request or connection response
         safety:add(safety_protocol_version, buf:range(36, 4))
@@ -317,7 +330,9 @@ function p_rasta.dissector(buf, pktinfo, root)
         safety:add_le(safety_reason, buf:range(38, 2))
     end
 
-    -- check safety code
+    -----------------
+    -- Safety Code --
+    -----------------
     if p_rasta.prefs.safety_code_algo == ALGO_MD4 then
         if p_rasta.prefs.safety_code_len > 0 then
             local safety_packet = buf:raw(8, safety_length - p_rasta.prefs.safety_code_len)
@@ -358,6 +373,9 @@ function p_rasta.dissector(buf, pktinfo, root)
     return pktlen
 end
 
+-----------------------
+-- Heuristic Checker --
+-----------------------
 local function heuristic_checker(buffer, pinfo, tree)
     -- guard for length
     length = buffer:len()

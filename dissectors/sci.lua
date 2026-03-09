@@ -160,7 +160,10 @@ local sci_p_message_type    = ProtoField.uint16("sci.message_type", "Message Typ
 local sci_src_id            = ProtoField.string("sci.src_id", "Sender Identifier")
 local sci_dest_id           = ProtoField.string("sci.dest_id", "Receiver Identifier")
 local sci_btp_version       = ProtoField.uint8("sci.btp_version", "PDI-Version of Sender")
-local sci_btp_version_cmp   = ProtoField.uint8("sci.btp_version_cmp", "Result of BTP Version Comparison")
+local sci_result_pdi_version_check = ProtoField.uint8("sci.sci_result_pdi_version_check", "Result of PDI Version Check", base.HEX, {
+    [0x01] = "PDI-Versions from Receiver and Sender do not match.",
+    [0x02] = "PDI-Versions from Receiver and Sender do match."
+})
 local sci_crc_length        = ProtoField.uint8("sci.crc_length", "Length of Check Code")
 local sci_crc               = ProtoField.uint64("sci.crc", "Check Code")
 local sci_nd1               = ProtoField.uint8("sci.nd1", "Basic Aspect Type", base.HEX, {
@@ -308,7 +311,7 @@ p_sci.fields = {
         sci_dest_id,
         sci_src_id,
         sci_btp_version,
-        sci_btp_version_cmp,
+        sci_result_pdi_version_check,
         sci_crc_length,
         sci_crc,
         sci_nd1,
@@ -444,7 +447,7 @@ function format_data(sci_type, mtype, sci_sub, buf, position)
             sci_sub:add(sci_btp_version, buf:range(43+position, 1))
         end
         if (mtype == 0x0025) then
-            sci_sub:add(sci_btp_version_cmp, buf:range(43+position, 1))
+            sci_sub:add(sci_result_pdi_version_check, buf:range(43+position, 1))
             sci_sub:add(sci_btp_version, buf:range(44+position, 1))
             sci_sub:add(sci_crc_length, buf:range(45+position, 1))
             local l = buf:range(45+position, 1):le_uint()
@@ -505,7 +508,7 @@ function format_data(sci_type, mtype, sci_sub, buf, position)
         if (mtype == 0x0007) then
             sci_sub:add(sci_tds_occ_status, buf:range(43+position, 1))
             sci_sub:add(sci_tds_forced_to_clr, buf:range(44+position, 1))
-            sci_sub:add(sci_tds_filling_level, buf:range(45+position, 2))
+            sci_sub:add_le(sci_tds_filling_level, buf:range(45+position, 2))
             sci_sub:add(sci_tds_pom, buf:range(47+position, 1))
             sci_sub:add(sci_tds_disturbance_status, buf:range(48+position, 1))
             sci_sub:add(sci_tds_change_trigger, buf:range(49+position, 1))
@@ -521,8 +524,8 @@ function format_data(sci_type, mtype, sci_sub, buf, position)
             sci_sub:add(sci_tds_reason_for_failure2, buf:range(43+position, 1))
         end
         if (mtype == 0x0012) then
-            sci_sub:add(sci_tds_speed, buf:range(43+position, 2))
-            sci_sub:add(sci_tds_wheel_dia, buf:range(45+position, 2))
+            sci_sub:add_le(sci_tds_speed, buf:range(43+position, 2))
+            sci_sub:add_le(sci_tds_wheel_dia, buf:range(45+position, 2))
         end
         if (mtype == 0x0001) then
             sci_sub:add(sci_tds_mode_of_fc, buf:range(43+position, 1))

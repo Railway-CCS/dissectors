@@ -7,7 +7,7 @@ Wireshark dissectors for protocols of a railway signalling network.
   * RaSTA
   * SCI-P
   * SCI-LS
-  * SCI-TDS
+  * SCI-TDS (Little Endian only)
 
 ## Installation
 

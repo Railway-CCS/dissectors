@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-04-11
+
 - RaSTA dissector now provides automatic request/response packet correlation via sequence number matching. Original requests show "Confirmed in" links to their responses, and responses show "confirms" links back to the original requests. This enables users to quickly navigate between correlated packets in the protocol tree.
 
 ## [1.4.1] - 2025-12-01
@@ -74,7 +76,8 @@ Release v1.1.0
 
 - Initial release
 
-[Unreleased]: https://github.com/Railway-CCS/dissectors/compare/v1.4.1...main
+[Unreleased]: https://github.com/Railway-CCS/dissectors/compare/v1.5.0...main
+[1.5.0]: https://github.com/Railway-CCS/dissectors/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/Railway-CCS/dissectors/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Railway-CCS/dissectors/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/Railway-CCS/dissectors/compare/v1.2.0...v1.3.0

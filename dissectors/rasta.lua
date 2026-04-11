@@ -22,7 +22,7 @@
 
 local my_info =
 {
-    version = "1.4.1",
+    version = "1.5.0",
     description = "Dissector to parse the Rail Safe Transport Application (RaSTA) protocol.",
     repository = "https://github.com/Railway-CCS/dissectors"
 }

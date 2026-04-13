@@ -133,6 +133,12 @@ local safety_safety_code_valid   = ProtoField.new("Safety Code valid", "rasta.sa
 local rasta_sn_table = {}   -- (src:sn)  -> frame number of that packet
 local rasta_cs_table = {}   -- (src:sn)  -> frame number that confirmed (CS'd) it
 
+-- ProtoExpert
+local ef_crc_invalid        = ProtoExpert.new("rasta.expert.crc",       "Invalid CRC",                    expert.group.CHECKSUM,   expert.severity.WARN)
+local ef_md4_invalid        = ProtoExpert.new("rasta.expert.md4",       "Invalid Safety Code",            expert.group.CHECKSUM,   expert.severity.WARN)
+local ef_algo_unsupported   = ProtoExpert.new("rasta.expert.algo",      "Unsupported checksum algorithm", expert.group.CHECKSUM,   expert.severity.NOTE)
+local ef_disc_abnormal      = ProtoExpert.new("rasta.expert.disc",      "Abnormal disconnection",         expert.group.CONNECTION, expert.severity.WARN)
+
 p_rasta.fields = {
 -- redundancy layer
     redundancy_message_length,
@@ -159,6 +165,13 @@ p_rasta.fields = {
     safety_reason,
     safety_safety_code,
     safety_safety_code_valid
+}
+
+p_rasta.experts = {
+    ef_crc_invalid,
+    ef_md4_invalid,
+    ef_algo_unsupported,
+    ef_disc_abnormal
 }
 
 function p_rasta.dissector(buf, pktinfo, root)
@@ -213,7 +226,7 @@ function p_rasta.dissector(buf, pktinfo, root)
           print("VALID CRC")
         else
           -- invalid CRC
-          red_code_itm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_crc)
+          red_code_itm:add_proto_expert_info(ef_crc_invalid, "Invalid CRC, expected " .. expected_crc)
 
           valid_item = redundancy:add(redundancy_check_code_valid, buf:range(0, pktlen - CRC_LENGTH), false)
           valid_item:set_generated()
@@ -325,9 +338,14 @@ function p_rasta.dissector(buf, pktinfo, root)
         end
 
     elseif (msg_type:le_uint() == 6216) then
-        -- disconnect request message
         safety:add_le(safety_detailed, buf:range(36, 2))
-        safety:add_le(safety_reason, buf:range(38, 2))
+        local reason_range = buf:range(38, 2)
+        safety:add_le(safety_reason, reason_range)
+        local reason = reason_range:le_uint()
+        if reason ~= 0 then
+            safety:add_proto_expert_info(ef_disc_abnormal,
+                "Abnormal disconnect: " .. (vals_disconnect_reason[reason] or ("reason=" .. reason)))
+        end
     end
 
     -----------------
@@ -359,7 +377,7 @@ function p_rasta.dissector(buf, pktinfo, root)
               valid_item:set_generated()
             else
               -- invalid MD4
-              treeItm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_md4)
+              treeItm:add_proto_expert_info(ef_md4_invalid, "Invalid MD4, expected " .. expected_md4)
 
               valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), false)
               valid_item:set_generated()
@@ -367,7 +385,7 @@ function p_rasta.dissector(buf, pktinfo, root)
         end
     else
         -- blake2b and siphash-2-4 not supported
-        safety:add_expert_info(PI_CHECKSUM, PI_WARN, "Checksum algorithm not supported")
+        safety:add_proto_expert_info(ef_algo_unsupported, "Checksum algorithm not supported")
     end
 
     return pktlen

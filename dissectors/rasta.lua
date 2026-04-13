@@ -228,7 +228,7 @@ function p_rasta.dissector(buf, pktinfo, root)
     local safety_length = buf:range(8,2):le_uint()
 
     -- length of the actual payload data. Should be 0 for non data packets.
-    local data_length = safety_length - 28 - p_rasta.prefs.safety_code_len
+    local data_length = math.max(0, safety_length - 28 - p_rasta.prefs.safety_code_len)
 
     -- print("pktlen=" .. pktlen)
     -- print("data_length=" .. data_length)

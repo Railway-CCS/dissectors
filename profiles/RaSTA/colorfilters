@@ -15,14 +15,17 @@
 @HTTP@http || tcp.port == 80 || http2@[58596,65535,51143][4626,10023,11822]
 @DCERPC@dcerpc@[51143,38807,65535][4626,10023,11822]
 @Routing@hsrp || eigrp || ospf || bgp || cdp || vrrp || carp || gvrp || igmp || ismp@[65535,62451,54998][4626,10023,11822]
+
+# RaSTA
 @RaSTA ConnReq@rasta.safety.type == 6200@[54484,63479,54484][0,0,0]
 @RaSTA ConnResp@rasta.safety.type == 6201@[47288,61680,47288][0,0,0]
 @RaSTA DiscReq@rasta.safety.type == 6216@[65535,57568,45746][0,0,0]
 @RaSTA Data@rasta.safety.type == 6240@[62965,62965,62965][0,0,0]
-@RaSTA Heartbeat@rasta.safety.type == 6224@[59624,60138,63222][0,0,0]
-@RaSTA RetrReq@rasta.safety.type == 6208@[65535,63993,50372][0,0,0]
-@RaSTA RetrResp@rasta.safety.type == 6209@[65535,62451,52685][0,0,0]
+@RaSTA Heartbeat@rasta.safety.type == 6220@[59624,60138,63222][0,0,0]
+@RaSTA RetrReq@rasta.safety.type == 6212@[65535,63993,50372][0,0,0]
+@RaSTA RetrResp@rasta.safety.type == 6213@[65535,62451,52685][0,0,0]
 @RaSTA RetrData@rasta.safety.type == 6241@[65535,65021,59367][0,0,0]
+
 @TCP SYN/FIN@tcp.flags & 0x02 || tcp.flags.fin == 1@[41120,41120,41120][4626,10023,11822]
 @TCP@tcp@[59367,59110,65535][4626,10023,11822]
 @UDP@udp@[56026,61166,65535][4626,10023,11822]

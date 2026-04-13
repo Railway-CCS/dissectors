@@ -134,10 +134,10 @@ local rasta_sn_table = {}   -- (src:sn)  -> frame number of that packet
 local rasta_cs_table = {}   -- (src:sn)  -> frame number that confirmed (CS'd) it
 
 -- ProtoExpert
-local ef_crc_invalid        = ProtoExpert.new("rasta.expert.crc",       "Invalid CRC",                    expert.group.CHECKSUM,   expert.severity.WARN)
-local ef_md4_invalid        = ProtoExpert.new("rasta.expert.md4",       "Invalid Safety Code",            expert.group.CHECKSUM,   expert.severity.WARN)
-local ef_algo_unsupported   = ProtoExpert.new("rasta.expert.algo",      "Unsupported checksum algorithm", expert.group.CHECKSUM,   expert.severity.NOTE)
-local ef_disc_abnormal      = ProtoExpert.new("rasta.expert.disc",      "Abnormal disconnection",         expert.group.CONNECTION, expert.severity.WARN)
+local ef_crc_invalid        = ProtoExpert.new("rasta.expert.crc",           "Invalid CRC",                    expert.group.CHECKSUM,   expert.severity.WARN)
+local ef_md4_invalid        = ProtoExpert.new("rasta.expert.safety_code",   "Invalid Safety Code",            expert.group.CHECKSUM,   expert.severity.WARN)
+local ef_algo_unsupported   = ProtoExpert.new("rasta.expert.algo",          "Unsupported checksum algorithm", expert.group.CHECKSUM,   expert.severity.NOTE)
+local ef_disc_abnormal      = ProtoExpert.new("rasta.expert.disc",          "Abnormal disconnection",         expert.group.CONNECTION, expert.severity.WARN)
 
 p_rasta.fields = {
 -- redundancy layer
@@ -377,7 +377,7 @@ function p_rasta.dissector(buf, pktinfo, root)
               valid_item:set_generated()
             else
               -- invalid MD4
-              treeItm:add_proto_expert_info(ef_md4_invalid, "Invalid MD4, expected " .. expected_md4)
+              treeItm:add_proto_expert_info(ef_md4_invalid, "Invalid Safety Code, expected " .. expected_md4)
 
               valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), false)
               valid_item:set_generated()

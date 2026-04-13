@@ -230,12 +230,6 @@ function p_rasta.dissector(buf, pktinfo, root)
     -- length of the actual payload data. Should be 0 for non data packets.
     local data_length = safety_length - 28 - p_rasta.prefs.safety_code_len
 
-    -- print("pktlen=" .. pktlen)
-    -- print("data_length=" .. data_length)
-
-    local msg_type = buf:range(10,2)
-    local type_short = get_rasta_type_short(msg_type:le_uint())
-
     local safety = tree:add(p_rasta,  buf:range(8, safety_length), "Safety and Retransmission Layer")
 
     -------------------
@@ -299,15 +293,17 @@ function p_rasta.dissector(buf, pktinfo, root)
     -----------------
     -- Info Column --
     -----------------
+    
+    local msg_type = buf:range(10,2)
+    local type_short = get_rasta_type_short(msg_type:le_uint())
     pktinfo.cols.info:set(string.format("[%s] SN=%u CS=%u  %u → %u", type_short, sn, cs, src, dst))
     if msg_type:le_uint() == 6216 then
         local reason = buf:range(38, 2):le_uint()
         local reason_str = vals_disconnect_reason[reason] or ("reason=" .. reason)
         pktinfo.cols.info:set(string.format("[DiscReq] SN=%u  %u → %u  (%s)",
             sn, src, dst, reason_str))
-        else
-        pktinfo.cols.info:set(string.format("[%s] SN=%u CS=%u  %u → %u",
-            type_short, sn, cs, src, dst))
+    else
+        pktinfo.cols.info:set(string.format("[%s] SN=%u CS=%u  %u → %u", type_short, sn, cs, src, dst))
     end
 
     -------------

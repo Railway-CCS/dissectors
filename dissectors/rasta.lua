@@ -293,7 +293,6 @@ function p_rasta.dissector(buf, pktinfo, root)
     -----------------
     -- Info Column --
     -----------------
-    
     local msg_type = buf:range(10,2)
     local type_short = get_rasta_type_short(msg_type:le_uint())
     pktinfo.cols.info:set(string.format("[%s] SN=%u CS=%u  %u → %u", type_short, sn, cs, src, dst))

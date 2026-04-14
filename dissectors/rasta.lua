@@ -134,10 +134,10 @@ local rasta_sn_table = {}   -- (src:sn)  -> frame number of that packet
 local rasta_cs_table = {}   -- (src:sn)  -> frame number that confirmed (CS'd) it
 
 -- ProtoExpert
-local ef_crc_invalid        = ProtoExpert.new("rasta.expert.crc",           "Invalid CRC",                    expert.group.CHECKSUM,   expert.severity.WARN)
-local ef_md4_invalid        = ProtoExpert.new("rasta.expert.safety_code",   "Invalid Safety Code",            expert.group.CHECKSUM,   expert.severity.WARN)
-local ef_algo_unsupported   = ProtoExpert.new("rasta.expert.algo",          "Unsupported checksum algorithm", expert.group.CHECKSUM,   expert.severity.NOTE)
-local ef_disc_abnormal      = ProtoExpert.new("rasta.expert.disc",          "Abnormal disconnection",         expert.group.CONNECTION, expert.severity.WARN)
+local ef_crc_invalid        = ProtoExpert.new("rasta.expert.crc",           "Invalid CRC",                    expert.group.CHECKSUM,    expert.severity.WARN)
+local ef_md4_invalid        = ProtoExpert.new("rasta.expert.safety_code",   "Invalid Safety Code",            expert.group.CHECKSUM,    expert.severity.WARN)
+local ef_algo_unsupported   = ProtoExpert.new("rasta.expert.algo",          "Unsupported checksum algorithm", expert.group.CHECKSUM,    expert.severity.NOTE)
+local ef_disc_abnormal      = ProtoExpert.new("rasta.expert.disc",          "Abnormal disconnection",         expert.group.SEQUENCE,    expert.severity.WARN)
 
 p_rasta.fields = {
 -- redundancy layer

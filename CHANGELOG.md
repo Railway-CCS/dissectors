@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Dissector is more robust againts malformed data. Thanks to [Krydderbarn](https://github.com/Krydderbarn).
-- Dissector learned to use ProtoExpert API. Thanks to [Krydderbarn](https://github.com/Krydderbarn).
-- Enhance info column formatting in RaSTA dissector for better clarity. Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+- Dissector is more robust againts malformed data. See [PR26](https://github.com/Railway-CCS/dissectors/pull/26). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+- Dissector learned to use ProtoExpert API. See [PR24](https://github.com/Railway-CCS/dissectors/pull/24). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+- Enhance info column formatting in RaSTA dissector for better clarity. See [PR22](https://github.com/Railway-CCS/dissectors/pull/22). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+- Add RaSTA coloring rules to shipped profile. See [PR25](https://github.com/Railway-CCS/dissectors/pull/25). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
 
 ## [1.5.0] - 2026-04-11
 

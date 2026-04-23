@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Dissector is more robust againts malformed data. Thanks to [Krydderbarn](https://github.com/Krydderbarn).
 - Dissector learned to use ProtoExpert API. Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+- Enhance info column formatting in RaSTA dissector for better clarity. Thanks to [Krydderbarn](https://github.com/Krydderbarn).
 
 ## [1.5.0] - 2026-04-11
 

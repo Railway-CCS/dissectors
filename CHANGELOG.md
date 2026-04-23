@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Dissector is more robust againts malformed data. Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+- Dissector learned to use ProtoExpert API. Thanks to [Krydderbarn](https://github.com/Krydderbarn).
 
 ## [1.5.0] - 2026-04-11
 

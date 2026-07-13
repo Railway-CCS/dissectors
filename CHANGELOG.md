@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-04-23
+
+### Added
+
+- Dissector is more robust againts malformed data. See [PR26](https://github.com/Railway-CCS/dissectors/pull/26). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+- Dissector learned to use ProtoExpert API. See [PR24](https://github.com/Railway-CCS/dissectors/pull/24). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+- Enhance info column formatting in RaSTA dissector for better clarity. See [PR22](https://github.com/Railway-CCS/dissectors/pull/22). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+- Add RaSTA coloring rules to shipped profile. See [PR25](https://github.com/Railway-CCS/dissectors/pull/25). Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+
+## [1.5.0] - 2026-04-11
+
+### Added
+
+- RaSTA dissector now provides automatic request/response packet correlation via sequence number matching. Original requests show "Confirmed in" links to their responses, and responses show "confirms" links back to the original requests. This enables users to quickly navigate between correlated packets in the protocol tree. Thanks to [Krydderbarn](https://github.com/Krydderbarn).
+
 ## [1.4.1] - 2025-12-01
 
 ### Fixed
@@ -72,7 +87,9 @@ Release v1.1.0
 
 - Initial release
 
-[Unreleased]: https://github.com/Railway-CCS/dissectors/compare/v1.4.1...main
+[Unreleased]: https://github.com/Railway-CCS/dissectors/compare/v1.6.0...main
+[1.6.0]: https://github.com/Railway-CCS/dissectors/compare/v1.5.0...v1.6.0
+[1.5.0]: https://github.com/Railway-CCS/dissectors/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/Railway-CCS/dissectors/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Railway-CCS/dissectors/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/Railway-CCS/dissectors/compare/v1.2.0...v1.3.0

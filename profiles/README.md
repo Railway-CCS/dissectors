@@ -10,5 +10,5 @@ Features:
 ### Installation
 
 Symlink or copy the `RaSTA` folder to your Wireshark personal configuration directory (`profiles` subdirectory).
-The exact location is system dependant and can be found in Wireshark under Help → About Wireshark → Folders Tab.
+The exact location is system dependent and can be found in Wireshark under Help → About Wireshark → Folders Tab.
 Restart Wireshark and select the RaSTA configuration under Edit → Configuration Profiles ...

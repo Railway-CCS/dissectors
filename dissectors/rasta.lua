@@ -22,7 +22,7 @@
 
 local my_info =
 {
-    version = "1.4.1",
+    version = "1.6.0",
     description = "Dissector to parse the Rail Safe Transport Application (RaSTA) protocol.",
     repository = "https://github.com/Railway-CCS/dissectors"
 }
@@ -117,6 +117,8 @@ local safety_dest_id             = ProtoField.uint32("rasta.safety.dest_id", "Re
 local safety_src_id              = ProtoField.uint32("rasta.safety.src_id", "Sender Identification")
 local safety_sequence_number     = ProtoField.uint32("rasta.safety.sn", "Sequence Number")
 local safety_c_sequence_number   = ProtoField.uint32("rasta.safety.cs", "Confirmed Sequence Number")
+local safety_confirms            = ProtoField.framenum("rasta.safety.confirms",  "Confirms",  base.NONE, frametype.ACK)
+local safety_confirmed_in        = ProtoField.framenum("rasta.safety.confirmed_in", "Confirmed in", base.NONE, frametype.RESPONSE)
 local safety_timestamp           = ProtoField.uint32("rasta.safety.ts", "Time Stamp")
 local safety_c_timestamp         = ProtoField.uint32("rasta.safety.cts", "Confirmed Time Stamp")
 local safety_protocol_version    = ProtoField.string("rasta.safety.protocol_version", "Protocol Version")
@@ -128,6 +130,14 @@ local safety_reason              = ProtoField.uint16("rasta.safety.reason", "Rea
 local safety_safety_code         = ProtoField.new("Safety Code", "rasta.safety.safety_code", ftypes.BYTES)
 local safety_safety_code_valid   = ProtoField.new("Safety Code valid", "rasta.safety.safety_code_valid", ftypes.BOOLEAN)
 
+local rasta_sn_table = {}   -- (src:sn)  -> frame number of that packet
+local rasta_cs_table = {}   -- (src:sn)  -> frame number that confirmed (CS'd) it
+
+-- ProtoExpert
+local ef_crc_invalid        = ProtoExpert.new("rasta.expert.crc",           "Invalid CRC",                    expert.group.CHECKSUM,    expert.severity.WARN)
+local ef_md4_invalid        = ProtoExpert.new("rasta.expert.safety_code",   "Invalid Safety Code",            expert.group.CHECKSUM,    expert.severity.WARN)
+local ef_algo_unsupported   = ProtoExpert.new("rasta.expert.algo",          "Unsupported checksum algorithm", expert.group.CHECKSUM,    expert.severity.NOTE)
+local ef_disc_abnormal      = ProtoExpert.new("rasta.expert.disc",          "Abnormal disconnection",         expert.group.SEQUENCE,    expert.severity.WARN)
 
 p_rasta.fields = {
 -- redundancy layer
@@ -143,6 +153,8 @@ p_rasta.fields = {
     safety_src_id,
     safety_sequence_number,
     safety_c_sequence_number,
+    safety_confirms,
+    safety_confirmed_in,
     safety_timestamp,
     safety_c_timestamp,
     safety_data,
@@ -153,6 +165,13 @@ p_rasta.fields = {
     safety_reason,
     safety_safety_code,
     safety_safety_code_valid
+}
+
+p_rasta.experts = {
+    ef_crc_invalid,
+    ef_md4_invalid,
+    ef_algo_unsupported,
+    ef_disc_abnormal
 }
 
 function p_rasta.dissector(buf, pktinfo, root)
@@ -207,7 +226,7 @@ function p_rasta.dissector(buf, pktinfo, root)
           print("VALID CRC")
         else
           -- invalid CRC
-          red_code_itm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_crc)
+          red_code_itm:add_proto_expert_info(ef_crc_invalid, "Invalid CRC, expected " .. expected_crc)
 
           valid_item = redundancy:add(redundancy_check_code_valid, buf:range(0, pktlen - CRC_LENGTH), false)
           valid_item:set_generated()
@@ -222,25 +241,86 @@ function p_rasta.dissector(buf, pktinfo, root)
     local safety_length = buf:range(8,2):le_uint()
 
     -- length of the actual payload data. Should be 0 for non data packets.
-    local data_length = safety_length - 28 - p_rasta.prefs.safety_code_len
-
-    -- print("pktlen=" .. pktlen)
-    -- print("data_length=" .. data_length)
-
-    local msg_type = buf:range(10,2)
-    pktinfo.cols.info:append(" " .. get_rasta_type_short(msg_type:le_uint()))
+    local data_length = math.max(0, safety_length - 28 - p_rasta.prefs.safety_code_len)
 
     local safety = tree:add(p_rasta,  buf:range(8, safety_length), "Safety and Retransmission Layer")
 
+    -------------------
+    -- Safety Header --
+    -------------------
     safety:add_le(safety_message_length,      buf:range(8, 2))
     safety:add_le(safety_message_type,        buf:range(10, 2))
     safety:add_le(safety_dest_id,             buf:range(12, 4))
     safety:add_le(safety_src_id,              buf:range(16, 4))
+
+    ----------------------
+    -- Sequence Numbers --
+    ----------------------
     safety:add_le(safety_sequence_number,     buf:range(20, 4))
+
+    
+    local sn  = buf:range(20, 4):le_uint()
+    local cs  = buf:range(24, 4):le_uint()
+    local src = buf:range(16, 4):le_uint()
+    local dst = buf:range(12, 4):le_uint()
+
+    -- Record this packet: keyed by (sender, sn) so that a future CS from the peer can find it.
+    local sn_key = string.format("%d:%d", src, sn)
+    if not rasta_sn_table[sn_key] then
+        rasta_sn_table[sn_key] = pktinfo.number
+    end
+    -- If a later packet has already recorded a CS for our SN, show it here.
+    local response_frame = rasta_cs_table[sn_key]
+    if response_frame then
+        local req_item = safety:add(safety_confirmed_in, buf:range(20, 4), response_frame)
+        req_item:set_generated()
+    end
+
     safety:add_le(safety_c_sequence_number,   buf:range(24, 4))
+
+    -- This packet's CS acknowledges a packet previously sent by 'dst' with SN == CS.
+    -- Look up that original packet and:
+    --   1. Add a "Confirmed in" link on the original packet.
+    --   2. Add a "Confirms" link on this packet pointing back to the confirmed sequence number.
+    local cs_key = string.format("%d:%d", dst, cs)
+    local original_frame = rasta_sn_table[cs_key]
+    if original_frame then
+        -- "Confirmed in" on this packet: the original request is at original_frame
+        local resp_item = safety:add(safety_confirms, buf:range(24, 4), original_frame)
+        resp_item:set_generated()
+
+        -- Remember that original_frame was confirmed/responded-to by our current frame.
+        -- This is used when the original packet is dissected (on reload) to show "Confirms".
+        if not rasta_cs_table[cs_key] then
+            rasta_cs_table[cs_key] = pktinfo.number
+        end
+    end
+
+    ----------------
+    -- Timestamps --
+    ----------------
     safety:add_le(safety_timestamp,           buf:range(28, 4))
     safety:add_le(safety_c_timestamp,         buf:range(32, 4))
 
+
+    -----------------
+    -- Info Column --
+    -----------------
+    local msg_type = buf:range(10,2)
+    local type_short = get_rasta_type_short(msg_type:le_uint())
+    pktinfo.cols.info:set(string.format("[%s] SN=%u CS=%u  %u → %u", type_short, sn, cs, src, dst))
+    if msg_type:le_uint() == 6216 then
+        local reason = buf:range(38, 2):le_uint()
+        local reason_str = vals_disconnect_reason[reason] or ("reason=" .. reason)
+        pktinfo.cols.info:set(string.format("[DiscReq] SN=%u  %u → %u  (%s)",
+            sn, src, dst, reason_str))
+    else
+        pktinfo.cols.info:set(string.format("[%s] SN=%u CS=%u  %u → %u", type_short, sn, cs, src, dst))
+    end
+
+    -------------
+    -- Payload --
+    -------------
     if (msg_type:le_uint() == 6200 or msg_type:le_uint() == 6201) then
         -- connection request or connection response
         safety:add(safety_protocol_version, buf:range(36, 4))
@@ -268,12 +348,19 @@ function p_rasta.dissector(buf, pktinfo, root)
         end
 
     elseif (msg_type:le_uint() == 6216) then
-        -- disconnect request message
         safety:add_le(safety_detailed, buf:range(36, 2))
-        safety:add_le(safety_reason, buf:range(38, 2))
+        local reason_range = buf:range(38, 2)
+        safety:add_le(safety_reason, reason_range)
+        local reason = reason_range:le_uint()
+        if reason ~= 0 then
+            safety:add_proto_expert_info(ef_disc_abnormal,
+                "Abnormal disconnect: " .. (vals_disconnect_reason[reason] or ("reason=" .. reason)))
+        end
     end
 
-    -- check safety code
+    -----------------
+    -- Safety Code --
+    -----------------
     if p_rasta.prefs.safety_code_algo == ALGO_MD4 then
         if p_rasta.prefs.safety_code_len > 0 then
             local safety_packet = buf:raw(8, safety_length - p_rasta.prefs.safety_code_len)
@@ -300,7 +387,7 @@ function p_rasta.dissector(buf, pktinfo, root)
               valid_item:set_generated()
             else
               -- invalid MD4
-              treeItm:add_expert_info(PI_CHECKSUM, PI_WARN, "Invalid Checksum, expected " .. expected_md4)
+              treeItm:add_proto_expert_info(ef_md4_invalid, "Invalid Safety Code, expected " .. expected_md4)
 
               valid_item = safety:add(safety_safety_code_valid, buf:range(8, safety_length - p_rasta.prefs.safety_code_len), false)
               valid_item:set_generated()
@@ -308,12 +395,15 @@ function p_rasta.dissector(buf, pktinfo, root)
         end
     else
         -- blake2b and siphash-2-4 not supported
-        safety:add_expert_info(PI_CHECKSUM, PI_WARN, "Checksum algorithm not supported")
+        safety:add_proto_expert_info(ef_algo_unsupported, "Checksum algorithm not supported")
     end
 
     return pktlen
 end
 
+-----------------------
+-- Heuristic Checker --
+-----------------------
 local function heuristic_checker(buffer, pinfo, tree)
     -- guard for length
     length = buffer:len()

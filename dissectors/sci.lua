@@ -22,7 +22,7 @@
 
 local my_info = 
 {
-    version = "1.4.1",
+    version = "1.6.0",
     description = "Dissector to parse Standard Communication Interface (SCI) protocols.",
     repository = "https://github.com/Railway-CCS/dissectors"
 }

@@ -290,8 +290,8 @@ local sci_tds_reason_for_failure2   = ProtoField.uint8("sci.tds_reason_for_failu
     [0x06] = "Process cancelled"
 })
 
-local sci_tds_speed    = ProtoField.uint16("sci.tds_speed", "Speed km/h", base.HEX)
-local sci_tds_wheel_dia = ProtoField.uint16("sci.tds_wheel_dia", "Wheel dia mm", base.HEX)
+local sci_tds_speed    = ProtoField.uint16("sci.tds_speed", "Speed km/h", base.DEC)
+local sci_tds_wheel_dia = ProtoField.uint16("sci.tds_wheel_dia", "Wheel dia mm", base.DEC)
 
 local sci_tds_mode_of_fc   = ProtoField.uint8("sci.tds_mode_of_fc", "Mode of FC", base.HEX, {
     [0x01] = "FC-U",
@@ -440,6 +440,25 @@ end
 ------- HELPER FUNCTIONS
 -------
 
+-- Decode a 2-byte packed BCD field into a real integer.
+-- Returns nil if any nibble isn't a valid BCD digit (0-9).
+function bcd16_to_uint(buf_range)
+    local raw = buf_range:uint()  -- e.g. 0x1234
+    local value = 0
+    local mult = 1
+
+    for shift = 0, 12, 4 do
+        local nibble = bit.band(bit.rshift(raw, shift), 0xF)
+        if nibble > 9 then
+            return nil -- invalid BCD digit
+        end
+        value = value + nibble * mult
+        mult = mult * 10
+    end
+
+    return value
+end
+
 function format_data(sci_type, mtype, sci_sub, buf, position)
     -- SCI-Generic
     if (sci_type == 0x30) or (sci_type == 0x40) or (sci_type == 0x20) then
@@ -524,8 +543,24 @@ function format_data(sci_type, mtype, sci_sub, buf, position)
             sci_sub:add(sci_tds_reason_for_failure2, buf:range(43+position, 1))
         end
         if (mtype == 0x0012) then
-            sci_sub:add_le(sci_tds_speed, buf:range(43+position, 2))
-            sci_sub:add_le(sci_tds_wheel_dia, buf:range(45+position, 2))
+            local speed_range = buf:range(43+position, 2)
+            local speed_val = bcd16_to_uint(speed_range)
+            if speed_val then
+                sci_sub:add(sci_tds_speed, speed_range, speed_val)
+            else
+                -- fall back to showing raw bytes with an "invalid BCD" note
+                local item = sci_sub:add(sci_tds_speed, speed_range, 0)
+                item:add_expert_info(PI_MALFORMED, PI_WARN, "Invalid BCD value")
+            end
+            local dia_range = buf:range(45+position, 2)
+            local dia_val = bcd16_to_uint(dia_range)
+            if dia_val then
+                sci_sub:add(sci_tds_wheel_dia, dia_range, dia_val)
+            else
+                -- fall back to showing raw bytes with an "invalid BCD" note
+                local item = sci_sub:add(sci_tds_wheel_dia, dia_range, 0)
+                item:add_expert_info(PI_MALFORMED, PI_WARN, "Invalid BCD value")
+            end
         end
         if (mtype == 0x0001) then
             sci_sub:add(sci_tds_mode_of_fc, buf:range(43+position, 1))

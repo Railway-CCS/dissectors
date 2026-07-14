@@ -37,3 +37,7 @@ A dump containing 6 manually created heartbeats taken from the RaSTA standard.
 | MD4 B | efcdab89 | 304c59de |
 | MD4 C | 98badcfe | 98badcfe |
 | MD4 D | 10325476 | 10325476 |
+
+## sci_tds_test_data.pcapng
+
+Test data with a number of SCI-TDS messages and commands (the final Additional Information message has an invalid BCD value). This sequence is not indented to be a valid EULYNX sequence.

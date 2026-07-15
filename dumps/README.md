@@ -40,4 +40,4 @@ A dump containing 6 manually created heartbeats taken from the RaSTA standard.
 
 ## sci_tds_test_data.pcapng
 
-Test data with a number of SCI-TDS messages and commands (the final Additional Information message has an invalid BCD value). This sequence is not indented to be a valid EULYNX sequence.
+Test data with a number of SCI-TDS messages and commands (the final Additional Information message has an invalid BCD value). This sequence is not intended to be a valid EULYNX sequence.

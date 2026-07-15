@@ -232,7 +232,8 @@ local sci_tds_forced_to_clr    = ProtoField.uint8("sci.tds_forced_to_clr", "Abil
     [0x02] = "able to be forced to clear",
 })
 
-local sci_tds_filling_level    = ProtoField.uint16("sci.tds_filling_level", "Filling Level", base.HEX)
+local sci_tds_filling_level    = ProtoField.int16("sci.tds_filling_level", "Filling Level", base.DEC)
+local sci_tds_na_filling_lvl  = ProtoField.uint16("sci.tds_filling_level", "Filling level is not applicable", base.HEX)
 
 local sci_tds_pom    = ProtoField.uint8("sci.tds_pom", "POM Status", base.HEX, {
     [0x01] = "Power supply OK",
@@ -331,6 +332,7 @@ p_sci.fields = {
         sci_tds_occ_status,
         sci_tds_forced_to_clr,
         sci_tds_filling_level,
+        sci_tds_na_filling_lvl,
         sci_tds_pom,
         sci_tds_disturbance_status,
         sci_tds_change_trigger,
@@ -527,7 +529,12 @@ function format_data(sci_type, mtype, sci_sub, buf, position)
         if (mtype == 0x0007) then
             sci_sub:add(sci_tds_occ_status, buf:range(43+position, 1))
             sci_sub:add(sci_tds_forced_to_clr, buf:range(44+position, 1))
-            sci_sub:add_le(sci_tds_filling_level, buf:range(45+position, 2))
+            local filling_level = buf:range(45+position, 2):le_uint()
+            if filling_level == 0xFFFF then
+                sci_sub:add(sci_tds_na_filling_lvl, buf:range(45+position, 2))
+            else
+                sci_sub:add(sci_tds_filling_level, buf:range(45+position, 2))
+            end
             sci_sub:add(sci_tds_pom, buf:range(47+position, 1))
             sci_sub:add(sci_tds_disturbance_status, buf:range(48+position, 1))
             sci_sub:add(sci_tds_change_trigger, buf:range(49+position, 1))

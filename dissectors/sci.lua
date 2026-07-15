@@ -64,7 +64,7 @@ local valuestring_zs3 = {
     [0xFF] = "Off"
 }
 
-valuestring_zs2 = {    
+local valuestring_zs2 = {    
     [0x00] = "Not used",
     [0x01] = "Character A",
     [0x02] = "Character B",
@@ -159,7 +159,7 @@ local sci_p_message_type    = ProtoField.uint16("sci.message_type", "Message Typ
 
 local sci_src_id            = ProtoField.string("sci.src_id", "Sender Identifier")
 local sci_dest_id           = ProtoField.string("sci.dest_id", "Receiver Identifier")
-local sci_btp_version       = ProtoField.uint8("sci.btp_version", "PDI-Version of Sender")
+local sci_btp_version       = ProtoField.uint8("sci.btp_version", "PDI-Version")
 local sci_result_pdi_version_check = ProtoField.uint8("sci.sci_result_pdi_version_check", "Result of PDI Version Check", base.HEX, {
     [0x01] = "PDI-Versions from Receiver and Sender do not match.",
     [0x02] = "PDI-Versions from Receiver and Sender do match."
@@ -233,7 +233,7 @@ local sci_tds_forced_to_clr    = ProtoField.uint8("sci.tds_forced_to_clr", "Abil
 })
 
 local sci_tds_filling_level    = ProtoField.int16("sci.tds_filling_level", "Filling Level", base.DEC)
-local sci_tds_na_filling_lvl  = ProtoField.uint16("sci.tds_filling_level", "Filling level is not applicable", base.HEX)
+local sci_tds_na_filling_lvl  = ProtoField.uint16("sci.tds_filling_level_na", "Filling level is not applicable", base.HEX)
 
 local sci_tds_pom    = ProtoField.uint8("sci.tds_pom", "POM Status", base.HEX, {
     [0x01] = "Power supply OK",
@@ -346,6 +346,9 @@ p_sci.fields = {
         sci_tds_mode_of_fc
     }
 
+local format_data
+local bcd16_to_uint
+
 function p_sci.dissector(buf, pktinfo, root)
 
     local pktlen = buf:reported_length_remaining()
@@ -414,11 +417,7 @@ function p_sci.dissector(buf, pktinfo, root)
 			end
         end
         if (sci_type == 0x20) then
-            if p_sci.prefs.endianess == ENC_LE then
-                sci_sub:add_le(sci_tds_message_type, buf:range(position + 1, 2))
-            else
-                sci_sub:add_le(sci_tds_message_type, buf:range(position + 1, 2))
-            end
+            sci_sub:add_le(sci_tds_message_type, buf:range(position + 1, 2))
             local msgType = sci_tds_msg_types[mtype];
             if msgType == nil then
                 pktinfo.cols.info:append(" (Unknown Message Type)")

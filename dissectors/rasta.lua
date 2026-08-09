@@ -78,7 +78,7 @@ p_rasta.prefs.md4_c              = Pref.string("MD4 Initial C (hex)", "98badcfe"
 p_rasta.prefs.md4_d              = Pref.string("MD4 Initial D (hex)", "10325476", "Initial D value for MD4 safety code calculation as hex string")
 p_rasta.prefs.safety_key         = Pref.uint("Key", 1193046, "Key for the safety code when MD4 is not used")
 p_rasta.prefs.packetization      = Pref.bool("Payload Packetization", false, "Packetization for payload data.")
-p_rasta.prefs.sci                = Pref.bool("Parse SCI", false, "Try to parse payload as SCI.")
+p_rasta.prefs.sci                = Pref.bool("Parse SCI", true, "Try to parse payload as SCI.")
 
 local vals_message_type = {
     [6200] = "Connection Request",

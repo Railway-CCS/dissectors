@@ -5,6 +5,7 @@ Dissector for the following protocols:
 * RaSTA
 * SCI-LS
 * SCI-P
+* SCI-TDS (Little Endian only)
 
 ## RaSTA Packet Types
 

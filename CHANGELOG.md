@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Learn to parse SCI-TDS [PR27](https://github.com/Railway-CCS/dissectors/pull/27). Thanks to [rob82926](https://github.com/rob82926).
+
 ## [1.6.0] - 2026-04-23
 
 ### Added

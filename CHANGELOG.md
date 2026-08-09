@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-08-09
+
 ### Added
 
 - Learn to parse SCI-TDS [PR27](https://github.com/Railway-CCS/dissectors/pull/27). Thanks to [rob82926](https://github.com/rob82926).
@@ -91,7 +93,8 @@ Release v1.1.0
 
 - Initial release
 
-[Unreleased]: https://github.com/Railway-CCS/dissectors/compare/v1.6.0...main
+[Unreleased]: https://github.com/Railway-CCS/dissectors/compare/v1.7.0...main
+[1.7.0]: https://github.com/Railway-CCS/dissectors/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/Railway-CCS/dissectors/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/Railway-CCS/dissectors/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/Railway-CCS/dissectors/compare/v1.4.0...v1.4.1

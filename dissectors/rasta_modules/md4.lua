@@ -24,7 +24,7 @@
 
 local my_info = 
 {
-    version = "1.6.0",
+    version = "1.7.0",
     description = "MD4 implementation.",
     repository = "https://github.com/Railway-CCS/dissectors"
 }

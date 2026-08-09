@@ -24,7 +24,7 @@
 
 local my_info = 
 {
-    version = "1.6.0",
+    version = "1.7.0",
     description = "Wrapper that selects the appropriate 'bit' library for the used Lua version",
     repository = "https://github.com/Railway-CCS/dissectors"
 }
